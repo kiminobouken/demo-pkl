@@ -15,44 +15,7 @@
 </head>
 
 <body>
-    <main class="login-screen" id="login-screen">
-        <div class="login-decoration" aria-hidden="true">
-            <span class="login-orbit orbit-one"></span>
-            <span class="login-orbit orbit-two"></span>
-            <span class="login-grid"></span>
-        </div>
-        <section class="login-card" aria-labelledby="login-title">
-            <div class="login-brand">
-                <div class="brand-mark">SJ</div>
-                <div><strong>Sasmita Jaya</strong><span>Presensi PKL</span></div>
-            </div>
-            <div class="login-heading">
-                <p class="eyebrow">Ruang kerja sekolah</p>
-                <h1 id="login-title">Selamat datang kembali.</h1>
-                <p>Masuk untuk mengelola presensi dan aktivitas PKL kamu.</p>
-            </div>
-            <form id="login-form" class="login-form">
-                <label for="login-role">Masuk sebagai
-                    <select id="login-role" required>
-                        <option value="" selected disabled>Pilih peran</option>
-                        <option value="guru">Guru</option>
-                        <option value="Siswa/Siswi">Siswa/Siswi</option>
-                    </select>
-                </label>
-                <label for="login-id">NIS / ID
-                    <input id="login-id" name="login-id" type="text" placeholder="Masukkan NIS atau ID" autocomplete="username" required>
-                </label>
-                <label for="login-password">Password
-                    <span class="password-field"><input id="login-password" name="password" type="password" placeholder="Masukkan password" autocomplete="current-password" required><button type="button" id="toggle-password" aria-label="Tampilkan password" title="Tampilkan password">◉</button></span>
-                </label>
-                <p class="login-error" id="login-error" role="alert"></p>
-                <button class="primary-button login-submit" type="submit" id="login-submit">Masuk ke dashboard <span>→</span></button>
-            </form>
-            <p class="login-note"><span>◈</span> Akses aman untuk komunitas Sasmita Jaya</p>
-        </section>
-    </main>
-
-    <div class="app-shell" id="app-shell">
+    <div class="app-shell">
         <aside class="sidebar">
             <div class="brand-lockup">
                 <div class="brand-mark">SJ</div>
@@ -76,7 +39,6 @@
                 <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◫</span> Dashboard</button>
                 <button class="nav-item" data-view="rekap"><span class="nav-icon">▤</span> Rekap presensi</button>
                 <button class="nav-item" data-view="siswa"><span class="nav-icon">◎</span> Data siswa</button>
-                <button class="nav-item" data-view="laporan"><span class="nav-icon">↥</span> Laporan PKL</button>
                 <p class="nav-label nav-label-spaced">Lainnya</p>
                 <button class="nav-item" data-view="pengaturan"><span class="nav-icon">⚙</span> Pengaturan</button>
             </nav>
@@ -86,7 +48,7 @@
                     <span class="help-icon">?</span>
                     <div><strong>Butuh bantuan?</strong><span>Hubungi admin sekolah</span></div>
                 </div>
-                <button class="logout-button" id="logout-button"><span>↪</span> Keluar</button>
+                <button class="logout-button"><span>↪</span> Keluar</button>
             </div>
         </aside>
 
@@ -134,8 +96,8 @@
                             <div class="mini-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
                         </article>
                         <article class="stat-card">
-                                <div class="stat-top"><span class="stat-icon yellow">!</span><span class="muted-label">Perlu
-                                    perhatian</span></div><strong id="sick-count">1</strong><span>Hari sakit</span><a
+                            <div class="stat-top"><span class="stat-icon yellow">!</span><span class="muted-label">Perlu
+                                    perhatian</span></div><strong id="late-count">1</strong><span>Keterlambatan</span><a
                                 href="#rekap" data-view-link="rekap">Lihat detail →</a>
                         </article>
                     </div>
@@ -229,7 +191,7 @@
                                         <td><strong>Kamis, 10 Okt</strong><span>2024</span></td>
                                         <td>08:16</td>
                                         <td>16:11</td>
-                                        <td><span class="status-pill sick">Sakit</span></td>
+                                        <td><span class="status-pill warning">Terlambat</span></td>
                                         <td><span class="location-dot school"></span>Sekolah</td>
                                         <td><button class="row-menu" aria-label="Menu baris">•••</button></td>
                                     </tr>
@@ -253,8 +215,7 @@
                             </select></label><label>Status<select id="status-filter">
                                 <option>Semua status</option>
                                 <option>Hadir</option>
-                                <option>Tidak hadir</option>
-                                <option>Sakit</option>
+                                <option>Terlambat</option>
                             </select></label>
                         <div class="filter-summary">25 hari kerja · <strong>23 tercatat</strong></div>
                     </div>
@@ -318,41 +279,6 @@
                     </div>
                 </section>
 
-                <section class="view" id="laporan-view">
-                    <div class="view-heading">
-                        <div>
-                            <p class="eyebrow">Dokumen pembelajaran</p>
-                            <h1>Laporan PKL</h1>
-                            <p class="subheading">Upload laporan PKL untuk diperiksa dan disimpan oleh pembimbing.</p>
-                        </div>
-                    </div>
-                    <div class="report-layout">
-                        <form class="panel upload-panel" id="report-form">
-                            <div class="upload-icon">↥</div>
-                            <p class="eyebrow">Upload dokumen</p>
-                            <h2>Kirim laporan PKL kamu</h2>
-                            <p class="modal-copy">Gunakan format PDF, DOC, atau DOCX dengan ukuran maksimal 10 MB.</p>
-                            <label class="file-dropzone" for="report-file">
-                                <input id="report-file" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
-                                <strong>Pilih file laporan</strong><span id="report-file-name">Belum ada file dipilih</span>
-                            </label>
-                            <p class="upload-error" id="upload-error" role="alert"></p>
-                            <button class="primary-button full-width" type="submit" id="upload-report">Upload laporan <span>↥</span></button>
-                        </form>
-                        <article class="panel report-info-panel">
-                            <p class="eyebrow">Panduan singkat</p>
-                            <h2>Sebelum mengirim</h2>
-                            <div class="report-check"><span>01</span><div><strong>Pastikan laporan lengkap</strong><small>Isi identitas, kegiatan, dan pengesahan pembimbing.</small></div></div>
-                            <div class="report-check"><span>02</span><div><strong>Gunakan nama file yang jelas</strong><small>Contoh: LaporanPKL_RakaAditya.docx</small></div></div>
-                            <div class="report-check"><span>03</span><div><strong>Tunggu konfirmasi</strong><small>Status laporan akan diperbarui setelah diperiksa.</small></div></div>
-                        </article>
-                    </div>
-                    <div class="panel report-history">
-                        <div class="panel-heading"><div><p class="eyebrow">Arsip dokumen</p><h2>Laporan terakhir</h2></div><span class="status-pill neutral" id="report-status">Belum ada laporan</span></div>
-                        <div class="empty-report" id="report-empty"><span>▤</span><p>Belum ada laporan yang diupload.</p></div>
-                    </div>
-                </section>
-
                 <section class="view" id="pengaturan-view">
                     <div class="view-heading">
                         <div>
@@ -362,14 +288,6 @@
                         </div>
                     </div>
                     <div class="settings-list panel">
-                        <div class="setting-row theme-setting-row">
-                            <div><strong>Warna tampilan</strong><span>Pilih suasana warna yang paling nyaman untuk kamu.</span></div>
-                            <div class="theme-options" role="group" aria-label="Pilihan warna tampilan">
-                                <button class="theme-option theme-garden" data-theme="garden" aria-label="Tema Taman" aria-pressed="true" title="Tema Taman"><i></i><span>Taman</span></button>
-                                <button class="theme-option theme-ocean" data-theme="ocean" aria-label="Tema Laut" aria-pressed="false" title="Tema Laut"><i></i><span>Laut</span></button>
-                                <button class="theme-option theme-terracotta" data-theme="terracotta" aria-label="Tema Terracotta" aria-pressed="false" title="Tema Terracotta"><i></i><span>Terracotta</span></button>
-                            </div>
-                        </div>
                         <div class="setting-row">
                             <div><strong>Pengingat presensi pulang</strong><span>Terima pengingat 15 menit sebelum jam
                                     pulang.</span></div><button class="toggle on"
