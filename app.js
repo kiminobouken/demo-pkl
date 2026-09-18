@@ -12,14 +12,79 @@ const attendanceRows = [
     "Kamis, 10 Okt",
     "08:16",
     "16:11",
-    "Terlambat",
+    "Sakit",
     "Sekolah",
-    "Terlambat 16 menit",
+    "Surat keterangan sakit diterima",
   ],
   ["Rabu, 09 Okt", "07:31", "16:02", "Hadir", "Perusahaan", "Tepat waktu"],
   ["Selasa, 08 Okt", "07:36", "16:08", "Hadir", "Perusahaan", "Tepat waktu"],
   ["Senin, 07 Okt", "07:29", "16:00", "Hadir", "Perusahaan", "Tepat waktu"],
 ];
+
+const loginScreen = document.querySelector("#login-screen");
+const appShell = document.querySelector("#app-shell");
+const loginForm = document.querySelector("#login-form");
+const loginError = document.querySelector("#login-error");
+const loginPassword = document.querySelector("#login-password");
+const themeOptions = document.querySelectorAll(".theme-option");
+
+function applyTheme(theme) {
+  const selectedTheme = ["garden", "ocean", "terracotta"].includes(theme) ? theme : "garden";
+  document.documentElement.dataset.theme = selectedTheme;
+  themeOptions.forEach((option) => {
+    option.setAttribute("aria-pressed", option.dataset.theme === selectedTheme);
+  });
+}
+
+applyTheme(localStorage.getItem("presensi-theme"));
+themeOptions.forEach((option) =>
+  option.addEventListener("click", () => {
+    const theme = option.dataset.theme;
+    localStorage.setItem("presensi-theme", theme);
+    applyTheme(theme);
+  }),
+);
+
+function setAuthenticated(authenticated, animate = false) {
+  loginScreen.classList.toggle("authenticated", authenticated);
+  appShell.classList.toggle("authenticated", authenticated);
+  document.body.classList.toggle("logged-in", authenticated);
+  if (animate) {
+    loginScreen.classList.toggle("is-exiting", authenticated);
+    appShell.classList.toggle("is-entering", authenticated);
+    window.setTimeout(() => {
+      loginScreen.classList.remove("is-exiting");
+      appShell.classList.remove("is-entering");
+    }, 480);
+  }
+}
+
+if (sessionStorage.getItem("presensi-authenticated") === "true") {
+  setAuthenticated(true, true);
+}
+
+loginForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (!loginForm.reportValidity()) return;
+  sessionStorage.setItem("presensi-authenticated", "true");
+  loginError.textContent = "";
+  setAuthenticated(true);
+});
+
+document.querySelector("#toggle-password").addEventListener("click", (event) => {
+  const button = event.currentTarget;
+  const isPassword = loginPassword.type === "password";
+  loginPassword.type = isPassword ? "text" : "password";
+  button.setAttribute("aria-label", isPassword ? "Sembunyikan password" : "Tampilkan password");
+  button.title = isPassword ? "Sembunyikan password" : "Tampilkan password";
+});
+
+document.querySelector("#logout-button").addEventListener("click", () => {
+  sessionStorage.removeItem("presensi-authenticated");
+  loginForm.reset();
+  setAuthenticated(false);
+  document.querySelector("#login-role").focus();
+});
 
 const navItems = document.querySelectorAll(".nav-item");
 const views = document.querySelectorAll(".view");
@@ -28,6 +93,7 @@ const titles = {
   dashboard: "Dashboard",
   rekap: "Rekap presensi",
   siswa: "Data siswa",
+  laporan: "Laporan PKL",
   pengaturan: "Pengaturan",
 };
 
@@ -53,7 +119,7 @@ document.querySelectorAll("[data-view-link]").forEach((link) =>
 );
 
 function rowMarkup(row) {
-  const statusClass = row[3] === "Terlambat" ? "warning" : "success";
+  const statusClass = row[3] === "Sakit" ? "sick" : row[3] === "Tidak hadir" ? "absent" : "success";
   const locationClass = row[4] === "Sekolah" ? "school" : "";
   return `<tr><td><strong>${row[0]}</strong><span>2024</span></td><td>${row[1]}</td><td class="${row[2] === "—" ? "muted-text" : ""}">${row[2]}</td><td><span class="status-pill ${statusClass}">${row[3]}</span></td><td><span class="location-dot ${locationClass}"></span>${row[4]}</td><td>${row[5]}</td></tr>`;
 }
@@ -72,6 +138,70 @@ document.querySelector("#status-filter").addEventListener("change", (event) => {
       ? attendanceRows
       : attendanceRows.filter((row) => row[3] === selected),
   );
+});
+
+const reportForm = document.querySelector("#report-form");
+const reportFile = document.querySelector("#report-file");
+const reportFileName = document.querySelector("#report-file-name");
+const uploadError = document.querySelector("#upload-error");
+const reportStatus = document.querySelector("#report-status");
+const reportEmpty = document.querySelector("#report-empty");
+const allowedReportTypes = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+const maxReportSize = 10 * 1024 * 1024;
+
+reportFile.addEventListener("change", () => {
+  const file = reportFile.files[0];
+  reportFileName.textContent = file ? file.name : "Belum ada file dipilih";
+  uploadError.textContent = "";
+});
+
+reportForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const file = reportFile.files[0];
+  if (!file) return;
+  if (!allowedReportTypes.includes(file.type) || !/\.(pdf|docx?)$/i.test(file.name)) {
+    uploadError.textContent = "Format file harus PDF, DOC, atau DOCX.";
+    return;
+  }
+  if (file.size > maxReportSize) {
+    uploadError.textContent = "Ukuran file maksimal 10 MB.";
+    return;
+  }
+  const reader = new FileReader();
+  const button = document.querySelector("#upload-report");
+  button.disabled = true;
+  button.textContent = "Mengupload laporan...";
+  reader.onload = async () => {
+    try {
+      const response = await fetch("/api/report-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, type: file.type, data: reader.result }),
+      });
+      if (!response.ok) throw new Error("upload failed");
+      reportStatus.textContent = "Menunggu pemeriksaan";
+      reportStatus.className = "status-pill warning";
+      reportEmpty.innerHTML = `<div class="report-file-row"><span class="file-badge">${file.name.split(".").pop().toUpperCase()}</span><div><strong>${file.name}</strong><small>Baru saja diupload · Menunggu pemeriksaan pembimbing</small></div></div>`;
+      uploadError.textContent = "";
+      reportForm.reset();
+      reportFileName.textContent = "Belum ada file dipilih";
+    } catch {
+      uploadError.textContent = "Laporan belum berhasil diupload. Pastikan server lokal sedang berjalan.";
+    } finally {
+      button.disabled = false;
+      button.innerHTML = "Upload laporan <span>↥</span>";
+    }
+  };
+  reader.onerror = () => {
+    uploadError.textContent = "File tidak dapat dibaca oleh browser.";
+    button.disabled = false;
+    button.innerHTML = "Upload laporan <span>↥</span>";
+  };
+  reader.readAsDataURL(file);
 });
 
 const modal = document.querySelector("#qr-modal");
