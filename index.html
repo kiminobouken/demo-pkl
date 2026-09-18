@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f0e8">
+    <title>Presensi PKL | SMK Sasmita Jaya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand-lockup">
+                <div class="brand-mark">SJ</div>
+                <div>
+                    <strong>Sasmita Jaya</strong>
+                    <span>Presensi PKL</span>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <div class="avatar">RA</div>
+                <div>
+                    <strong>Raka Aditya</strong>
+                    <span>Siswa · XI RPL 2</span>
+                </div>
+                <button class="icon-button" aria-label="Buka menu akun" title="Menu akun">•••</button>
+            </div>
+
+            <nav class="side-nav" aria-label="Navigasi utama">
+                <p class="nav-label">Ruang kerja</p>
+                <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◫</span> Dashboard</button>
+                <button class="nav-item" data-view="rekap"><span class="nav-icon">▤</span> Rekap presensi</button>
+                <button class="nav-item" data-view="siswa"><span class="nav-icon">◎</span> Data siswa</button>
+                <p class="nav-label nav-label-spaced">Lainnya</p>
+                <button class="nav-item" data-view="pengaturan"><span class="nav-icon">⚙</span> Pengaturan</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="help-card">
+                    <span class="help-icon">?</span>
+                    <div><strong>Butuh bantuan?</strong><span>Hubungi admin sekolah</span></div>
+                </div>
+                <button class="logout-button"><span>↪</span> Keluar</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="breadcrumb"><span>Ruang siswa</span><b>/</b><strong id="page-breadcrumb">Dashboard</strong>
+                </div>
+                <div class="topbar-actions">
+                    <span class="live-dot">Sistem aktif</span>
+                    <button class="notification-button" aria-label="Notifikasi"
+                        title="Notifikasi"><span>♢</span><i></i></button>
+                    <div class="mini-avatar">RA</div>
+                </div>
+            </header>
+
+            <div class="content-wrap">
+                <section class="view active" id="dashboard-view">
+                    <div class="welcome-row">
+                        <div>
+                            <p class="eyebrow">Senin, 14 Oktober 2024 · Minggu ke-6</p>
+                            <h1>Selamat pagi, Raka.</h1>
+                            <p class="subheading">Satu langkah kecil hari ini untuk perjalanan PKL yang lebih tertib.
+                            </p>
+                        </div>
+                        <button class="primary-button" id="open-qr"><span>▣</span> Presensi sekarang</button>
+                    </div>
+
+                    <div class="stats-grid">
+                        <article class="stat-card highlight">
+                            <div class="stat-top"><span class="stat-icon">◷</span><span class="trend up">+8.2%</span>
+                            </div><strong id="attendance-rate">96.4%</strong><span>Kehadiran bulan ini</span>
+                            <div class="sparkline" aria-hidden="true">
+                                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                            </div>
+                        </article>
+                        <article class="stat-card">
+                            <div class="stat-top"><span class="stat-icon coral">◒</span><span class="muted-label">Bulan
+                                    ini</span></div><strong id="present-count">22</strong><span>Hari hadir</span>
+                            <div class="progress-track"><i style="width: 88%"></i></div><small>Target 25 hari</small>
+                        </article>
+                        <article class="stat-card">
+                            <div class="stat-top"><span class="stat-icon blue">◌</span><span
+                                    class="muted-label">Rata-rata</span></div><strong>07:54</strong><span>Jam
+                                masuk</span>
+                            <div class="mini-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                        </article>
+                        <article class="stat-card">
+                            <div class="stat-top"><span class="stat-icon yellow">!</span><span class="muted-label">Perlu
+                                    perhatian</span></div><strong id="late-count">1</strong><span>Keterlambatan</span><a
+                                href="#rekap" data-view-link="rekap">Lihat detail →</a>
+                        </article>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <article class="panel schedule-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Jadwal hari ini</p>
+                                    <h2>Senin, 14 Oktober</h2>
+                                </div><button class="more-button" aria-label="Lihat jadwal lengkap">•••</button>
+                            </div>
+                            <div class="timeline">
+                                <div class="timeline-item done"><span class="timeline-time">07:30</span><span
+                                        class="timeline-line"><i></i></span>
+                                    <div><strong>Jam masuk PKL</strong><span>PT. Kreasi Digital Nusantara</span></div><b
+                                        class="status-pill success">Hadir</b>
+                                </div>
+                                <div class="timeline-item next"><span class="timeline-time">12:00</span><span
+                                        class="timeline-line"><i></i></span>
+                                    <div><strong>Istirahat</strong><span>Waktu istirahat siang</span></div><b
+                                        class="status-pill neutral">Terjadwal</b>
+                                </div>
+                                <div class="timeline-item"><span class="timeline-time">16:00</span><span
+                                        class="timeline-line"><i></i></span>
+                                    <div><strong>Jam pulang PKL</strong><span>Jangan lupa presensi pulang</span></div><b
+                                        class="status-pill outline">Belum</b>
+                                </div>
+                            </div>
+                        </article>
+                        <article class="panel company-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Lokasi PKL</p>
+                                    <h2>Perusahaan kamu</h2>
+                                </div><span class="verified-badge">✓ Terverifikasi</span>
+                            </div>
+                            <div class="company-hero">
+                                <div class="company-logo">KD</div>
+                                <div>
+                                    <h3>PT. Kreasi Digital Nusantara</h3>
+                                    <p>Jl. BSD Raya Utama No. 18<br>Serpong, Tangerang Selatan</p>
+                                </div>
+                            </div>
+                            <div class="company-meta">
+                                <div><span>Pembimbing lapangan</span><strong>Andi Pratama</strong></div>
+                                <div><span>Durasi PKL</span><strong>01 Sep – 30 Nov 2024</strong></div>
+                            </div>
+                            <button class="secondary-button full-width" id="show-location">Lihat detail lokasi
+                                <span>↗</span></button>
+                        </article>
+                    </div>
+
+                    <div class="panel recent-panel">
+                        <div class="panel-heading">
+                            <div>
+                                <p class="eyebrow">Aktivitas terbaru</p>
+                                <h2>Riwayat presensi</h2>
+                            </div><button class="text-button" data-view-link="rekap">Lihat semua <span>→</span></button>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>TANGGAL</th>
+                                        <th>JAM MASUK</th>
+                                        <th>JAM PULANG</th>
+                                        <th>STATUS</th>
+                                        <th>LOKASI</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-table">
+                                    <tr>
+                                        <td><strong>Senin, 14 Okt</strong><span>2024</span></td>
+                                        <td>07:28</td>
+                                        <td class="muted-text">—</td>
+                                        <td><span class="status-pill success">Hadir</span></td>
+                                        <td><span class="location-dot"></span>Perusahaan</td>
+                                        <td><button class="row-menu" aria-label="Menu baris">•••</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Jumat, 11 Okt</strong><span>2024</span></td>
+                                        <td>07:42</td>
+                                        <td>16:05</td>
+                                        <td><span class="status-pill success">Hadir</span></td>
+                                        <td><span class="location-dot"></span>Perusahaan</td>
+                                        <td><button class="row-menu" aria-label="Menu baris">•••</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Kamis, 10 Okt</strong><span>2024</span></td>
+                                        <td>08:16</td>
+                                        <td>16:11</td>
+                                        <td><span class="status-pill warning">Terlambat</span></td>
+                                        <td><span class="location-dot school"></span>Sekolah</td>
+                                        <td><button class="row-menu" aria-label="Menu baris">•••</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="view" id="rekap-view">
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Administrasi kehadiran</p>
+                            <h1>Rekap presensi</h1>
+                            <p class="subheading">Pantau catatan kehadiran PKL kamu dalam satu tampilan.</p>
+                        </div><button class="secondary-button">↓ Unduh laporan</button>
+                    </div>
+                    <div class="filter-bar"><label>Periode<select>
+                                <option>Oktober 2024</option>
+                                <option>September 2024</option>
+                            </select></label><label>Status<select id="status-filter">
+                                <option>Semua status</option>
+                                <option>Hadir</option>
+                                <option>Terlambat</option>
+                            </select></label>
+                        <div class="filter-summary">25 hari kerja · <strong>23 tercatat</strong></div>
+                    </div>
+                    <div class="panel full-panel">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>TANGGAL</th>
+                                        <th>JAM MASUK</th>
+                                        <th>JAM PULANG</th>
+                                        <th>STATUS</th>
+                                        <th>LOKASI</th>
+                                        <th>CATATAN</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="full-table"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="view" id="siswa-view">
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Profil peserta</p>
+                            <h1>Data siswa</h1>
+                            <p class="subheading">Informasi penempatan PKL dan pembimbing yang terhubung.</p>
+                        </div><button class="secondary-button">✎ Ajukan perubahan</button>
+                    </div>
+                    <div class="profile-grid">
+                        <article class="panel student-profile">
+                            <div class="large-avatar">RA</div>
+                            <p class="eyebrow">Peserta PKL</p>
+                            <h2>Raka Aditya</h2>
+                            <p class="subheading">XI Rekayasa Perangkat Lunak 2</p>
+                            <div class="profile-details">
+                                <div><span>NIS</span><strong>202312047</strong></div>
+                                <div><span>Guru pembimbing</span><strong>Rina Wulandari, S.Pd.</strong></div>
+                            </div>
+                        </article>
+                        <article class="panel company-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Penempatan aktif</p>
+                                    <h2>Tempat PKL</h2>
+                                </div><span class="verified-badge">✓ Aktif</span>
+                            </div>
+                            <div class="company-hero">
+                                <div class="company-logo">KD</div>
+                                <div>
+                                    <h3>PT. Kreasi Digital Nusantara</h3>
+                                    <p>Divisi Product Design<br>Andi Pratama · Pembimbing lapangan</p>
+                                </div>
+                            </div>
+                            <div class="company-meta">
+                                <div><span>Mulai</span><strong>01 September 2024</strong></div>
+                                <div><span>Selesai</span><strong>30 November 2024</strong></div>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="view" id="pengaturan-view">
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Preferensi akun</p>
+                            <h1>Pengaturan</h1>
+                            <p class="subheading">Atur preferensi notifikasi dan keamanan akun.</p>
+                        </div>
+                    </div>
+                    <div class="settings-list panel">
+                        <div class="setting-row">
+                            <div><strong>Pengingat presensi pulang</strong><span>Terima pengingat 15 menit sebelum jam
+                                    pulang.</span></div><button class="toggle on"
+                                aria-label="Pengingat aktif"><i></i></button>
+                        </div>
+                        <div class="setting-row">
+                            <div><strong>Notifikasi presensi berhasil</strong><span>Tampilkan notifikasi setiap kali
+                                    presensi tercatat.</span></div><button class="toggle on"
+                                aria-label="Notifikasi aktif"><i></i></button>
+                        </div>
+                        <div class="setting-row">
+                            <div><strong>Bahasa aplikasi</strong><span>Bahasa Indonesia</span></div><button
+                                class="select-button">Indonesia⌄</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-backdrop" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-title">
+        <div class="modal"><button class="modal-close" id="close-qr" aria-label="Tutup">×</button>
+            <p class="eyebrow">Presensi masuk</p>
+            <h2 id="qr-title">Foto wajah untuk presensi</h2>
+            <p class="modal-copy">Ambil foto wajah sebagai bukti kehadiran di lokasi PKL.</p>
+            <div class="qr-frame" id="camera-frame">
+                <video id="camera-preview" autoplay playsinline muted></video>
+                <canvas id="face-capture"></canvas>
+                <div class="face-guide" id="face-placeholder">◯</div><span id="camera-status">Kamera belum
+                    diaktifkan</span>
+            </div>
+            <div class="modal-actions">
+                <button class="secondary-button" id="enable-camera"><span>◉</span> Buka kamera</button>
+                <button class="secondary-button" id="capture-face" disabled><span>◎</span> Ambil foto</button>
+                <button class="secondary-button" id="share-location"><span>⌖</span> Bagikan lokasi</button>
+            </div>
+            <div class="scan-status" id="location-status"><i></i><span>Lokasi belum dibagikan</span></div>
+            <button class="primary-button full-width" id="save-attendance" disabled>Simpan presensi</button>
+        </div>
+    </div>
+    <div class="toast" id="toast"><span>✓</span>
+        <div><strong>Presensi berhasil dicatat</strong><small>Jam masuk 07:28 · Lokasi terverifikasi</small></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
