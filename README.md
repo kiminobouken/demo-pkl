@@ -56,3 +56,4 @@ Detail yang belum ditetapkan harus ditanyakan kembali kepada pemilik proyek. Jan
 - `app.js` - navigasi, filter rekap, kamera, foto wajah, lokasi, dan pengiriman presensi.
 - `server.js` - server lokal dan endpoint penyimpanan foto.
 - `images/` - folder hasil foto presensi dan log metadata.
+- `reports/` - folder laporan PKL yang diupload dan log metadata.
