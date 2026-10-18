@@ -62,6 +62,38 @@ Daftar task ini diturunkan dari requirements dan design. ID requirement yang dic
   Simpan profil secara persisten, ganti toggle demo dengan state nyata, dan pastikan tema tetap konsisten saat reload.  
   **Trace:** REQ-V1-006.
 
+- [ ] **TASK-022 — Menyelesaikan menu identitas dan profil kanan atas**
+  Hubungkan avatar kanan atas dan tombol titik tiga pada kartu identitas ke menu yang dapat dibuka dengan mouse, keyboard, dan mobile. Sediakan tautan ke profil, pengaturan, tutorial, bantuan, dan logout sesuai role; hilangkan kontrol dekoratif yang tidak berfungsi.
+  **Trace:** REQ-V1-002, REQ-V1-006, REQ-V1-008; **Prioritas:** tinggi.
+
+- [ ] **TASK-023 — Menambahkan alur ubah password V1**
+  Buat UI ubah password pada login pertama dan Pengaturan, hubungkan ke `POST /api/password`, validasi minimal 12 karakter, tampilkan error/sukses, dan blokir penggunaan fitur sampai password sementara diganti.
+  **Trace:** REQ-V1-001, REQ-V1-006; **Prioritas:** tinggi.
+
+- [ ] **TASK-024 — Menyempurnakan notifikasi dan pusat bantuan**
+  Pastikan tombol notifikasi kanan atas membuka pusat notifikasi untuk role yang berwenang, indikator unread konsisten, dan kartu “Butuh bantuan?” membuka kontak/instruksi bantuan yang nyata.
+  **Trace:** REQ-V1-002, REQ-V1-006, REQ-V1-008.
+
+- [ ] **TASK-025 — Menambahkan tutorial penggunaan aplikasi**
+  Buat tutorial singkat yang dapat dibuka dari menu identitas/pengaturan dan menjelaskan login, lokasi PKL, kamera, presensi, laporan, dan navigasi untuk siswa, guru, serta admin.
+  **Trace:** REQ-V1-006, REQ-V1-008.
+
+- [ ] **TASK-026 — Memperbaiki alur kamera dan tampilan kontrol presensi**
+  Perjelas label dan status tombol “Buka kamera” serta “Ambil foto”, pertahankan state disabled sampai kamera aktif, pastikan foto hasil capture tidak mirror, dan tambahkan validasi browser/izin yang mudah dipahami.
+  **Trace:** REQ-V1-005, REQ-V1-006, REQ-V1-008.
+
+- [ ] **TASK-027 — Menyelesaikan alur lokasi PPD dan detail lokasi kosong**
+  Tampilkan usulan lokasi PPD yang disetujui pada daftar pilihan tombol edit/atur lokasi, muat ulang data setelah perubahan, dan ganti toast lokasi hardcoded dengan dialog detail lokasi tersimpan atau pesan “data lokasi belum dimasukkan”.
+  **Trace:** REQ-V1-002, REQ-V1-004, REQ-V1-008; **Prioritas:** tinggi.
+
+- [ ] **TASK-028 — Menambahkan filter tiga bulan dan unduh rekap presensi**
+  Tambahkan opsi periode tiga bulan terakhir, terapkan filter pada tabel dan ringkasan, lalu buat tombol unduh yang menghasilkan laporan dari hasil filter aktif dengan kondisi kosong dan error yang jelas.
+  **Trace:** REQ-V1-003, REQ-V1-008.
+
+- [ ] **TASK-029 — Memverifikasi persistence setelah refresh**
+  Pastikan upload laporan, foto presensi, metadata, lokasi, notifikasi baca, dan profil dimuat ulang dari server/database setelah refresh; tambahkan penanganan agar kegagalan penyimpanan tidak terlihat sebagai sukses.
+  **Trace:** REQ-V1-006, REQ-V1-007, REQ-V1-008; **Prioritas:** tinggi.
+
 ## 5. V2 Barcode, Guru, dan Admin
 
 - [x] **TASK-014 — Menetapkan validasi barcode dan jadwal keterlambatan**  
@@ -104,10 +136,11 @@ Daftar task ini diturunkan dari requirements dan design. ID requirement yang dic
 2. TASK-003 sampai TASK-005 untuk keamanan dan keputusan privasi.
 3. TASK-006 sampai TASK-010 untuk fondasi data dan presensi V1.
 4. TASK-011 sampai TASK-013 untuk laporan dan UX V1.
-5. TASK-014 sampai TASK-017 untuk penyempurnaan V2.
-6. TASK-018 sampai TASK-021 untuk verifikasi, observability, dan dokumentasi.
+5. TASK-022 sampai TASK-029 untuk menutup gap UX V1 yang tercatat di kertas.
+6. TASK-014 sampai TASK-017 untuk penyempurnaan V2.
+7. TASK-018 sampai TASK-021 untuk verifikasi, observability, dan dokumentasi.
 
-TASK-005 dan TASK-006 sampai TASK-017 sudah dikonfirmasi pemilik proyek.
+TASK-005 dan TASK-006 sampai TASK-017 sudah dikonfirmasi pemilik proyek. TASK-022 sampai TASK-029 ditambahkan berdasarkan daftar fitur yang tercatat di kertas pada 18 Oktober 2026 dan menunggu implementasi serta verifikasi.
 
 ## 8. Analisis kebutuhan lanjutan akun
 

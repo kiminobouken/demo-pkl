@@ -51,17 +51,22 @@ Aturan akun:
 - Navigasi memperbarui menu aktif, breadcrumb, dan posisi scroll.
 - Dashboard menampilkan tanggal, sapaan pengguna, statistik tingkat kehadiran bulan berjalan, jumlah hadir, jumlah sakit, serta tiga catatan terbaru.
 - Siswa dapat membuka alur presensi dari dashboard.
-- Tombol lokasi menampilkan informasi lokasi demo PT Kreasi Digital Nusantara Serpong.
+- Tombol detail lokasi membaca lokasi siswa dari data tersimpan, bukan nilai hardcoded.
+- Jika lokasi siswa belum tersedia, tombol detail lokasi membuka pesan yang menjelaskan bahwa data lokasi belum dimasukkan dan mengarahkan pengguna ke alur pengaturan lokasi.
+- Avatar/menu identitas di kanan atas dapat dibuka dan menyediakan akses ke profil atau pengaturan akun yang sesuai role.
+- Tombol menu titik tiga pada kartu identitas/sidebar memiliki fungsi yang terlihat oleh pengguna; kontrol dekoratif tidak boleh tetap tidak beraksi.
+- Kartu “Butuh bantuan?” dapat dibuka dan menampilkan kanal bantuan atau kontak admin sekolah yang dikonfigurasi.
 
 ### REQ-V1-003 — Rekap presensi
 
 - Rekap menampilkan tanggal, waktu masuk, waktu pulang, status, lokasi, dan bukti.
-- Rekap dapat difilter berdasarkan status dan periode.
+- Rekap dapat difilter berdasarkan status dan periode: semua periode, bulan ini, dan tiga bulan terakhir.
 - Status yang tersedia adalah Hadir, Tidak hadir, dan Sakit.
 - Lokasi menampilkan tautan Google Maps dengan koordinat dan akurasi, atau keterangan lokasi tidak tersedia.
 - Bukti menampilkan identitas pengguna, role, waktu diambil/disimpan, resolusi, tipe, ukuran, nama file, dan user agent.
 - Data diambil dari `GET /api/attendance-records` dengan urutan waktu terbaru.
 - Kondisi tanpa data menampilkan pesan bahwa belum ada catatan presensi.
+- Tombol unduh laporan presensi menghasilkan file yang memuat hasil rekap sesuai filter status dan periode yang sedang dipilih.
 
 ### REQ-V1-004 — Data siswa dan lokasi PKL
 
@@ -79,6 +84,8 @@ Aturan akun:
 - Impor bersifat all-or-nothing: satu error membatalkan seluruh transaksi.
 - NISN harus tepat 10 digit; nama wajib 2-120 karakter; nomor HP opsional dan divalidasi sebagai nomor Indonesia 8-20 karakter.
 - Siswa hanya memilih lokasi yang sudah disetujui. Permintaan lokasi baru dari siswa masuk sebagai usulan, bukan langsung menjadi lokasi aktif.
+- Siswa dapat mengusulkan lokasi tambahan, termasuk lokasi PPD, dari dialog pengaturan lokasi; usulan tersebut disimpan dan muncul pada daftar pilihan setelah disetujui guru/admin.
+- Setelah lokasi PPD disetujui, lokasi tersebut harus tersedia kembali ketika siswa membuka tombol edit/atur lokasi, termasuk setelah refresh.
 
 ### REQ-V1-005 — Presensi foto
 
@@ -110,6 +117,23 @@ Aturan akun:
 - Profil menampilkan jumlah siswa dan jumlah penempatan.
 - Tema garden, ocean, dan terracotta disimpan di `localStorage`.
 - Toggle pengaturan umum mengubah state visual.
+- Pengguna yang memiliki `mustChangePassword` diarahkan ke dialog atau halaman ubah password sebelum dapat menggunakan fitur aplikasi.
+- Pengguna dapat membuka fitur ubah password dari Pengaturan setelah login; password baru minimal 12 karakter, dikirim melalui `POST /api/password`, dan status wajib ganti password diperbarui setelah berhasil.
+- Profil dari avatar/menu kanan atas membuka profil pengguna yang sedang login; perubahan profil tidak boleh hanya tersimpan di browser.
+- Tombol notifikasi kanan atas membuka pusat notifikasi yang sama dengan menu Notifikasi dan menampilkan indikator jumlah belum dibaca sesuai role.
+- Kontrol “Buka kamera” dan “Ambil foto” memiliki label, keadaan disabled/aktif, dan bantuan visual yang cukup jelas; preview dan hasil foto tidak boleh mirror.
+- Aplikasi menyediakan tutorial singkat yang dapat dibuka pengguna untuk menjelaskan login, pemilihan lokasi, presensi, upload laporan, dan navigasi utama.
+- Aplikasi menyediakan alur “Butuh bantuan?” yang dapat dibuka dan menampilkan informasi kontak atau instruksi bantuan.
+- Daftar laporan siswa dan metadata foto/presensi dimuat kembali dari persistence server setelah refresh; upload yang berhasil tidak boleh hanya bergantung pada state browser.
+- Data upload yang gagal disimpan tidak boleh ditampilkan sebagai upload berhasil.
+
+### REQ-V1-008 — Penyelesaian interaksi UX yang tercatat di kertas
+
+- Semua tombol atau ikon yang tampak interaktif harus memiliki aksi, status, atau alasan yang jelas jika dinonaktifkan.
+- Menu identitas kiri atas dan avatar kanan atas harus dapat dibuka melalui mouse, keyboard, dan perangkat mobile.
+- Dialog lokasi menampilkan pesan khusus saat data lokasi belum tersedia dan menyediakan jalur langsung untuk mengatur atau mengusulkan lokasi.
+- Notifikasi, profil, tutorial, bantuan, ubah password, dan unduh rekap harus memiliki kondisi kosong, kondisi berhasil, dan pesan kegagalan yang terlihat.
+- Fitur baru tidak boleh menghapus atau mengubah data presensi, foto, laporan, lokasi, dan profil yang sudah tersimpan ketika halaman dimuat ulang.
 
 ### REQ-V1-007 — API dan persistensi
 

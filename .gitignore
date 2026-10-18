@@ -1,3 +1,28 @@
 /data/presensi.sqlite
 /data/presensi.sqlite-shm
 /data/presensi.sqlite-wal
+
+# Environment dan secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data
+/images/*
+!/images/.gitkeep
+
+/reports/*
+!/reports/.gitkeep
+
+/data/*
+!/data/.gitkeep
+
+# Runtime data V2
+/legacy/barcode-version/data/*
+!/legacy/barcode-version/data/.gitkeep
+
+/legacy/barcode-version/reports/*
+!/legacy/barcode-version/reports/.gitkeep
+
+# Playwright/debug artifacts
+.playwright-mcp/
