@@ -14,6 +14,14 @@ node server.js
 
 Kemudian buka `http://localhost:3000`. Server akan membuat folder `images` dan `data` otomatis. Foto presensi tersimpan di `images`; data siswa dan metadata presensi disimpan di SQLite `data/presensi.sqlite`. Pada hosting dengan disk persisten, `DATABASE_PATH` dapat diarahkan ke lokasi penyimpanan tersebut.
 
+Jika password akun lupa, reset secara lokal tanpa menghapus database:
+
+```powershell
+node reset-password.js admin.sekolah
+```
+
+Perintah tersebut meminta password baru secara tersembunyi, mensyaratkan minimal 12 karakter, mengeluarkan sesi akun yang direset, dan mencatat tindakan pada audit. Gunakan ID akun yang sesuai dan jangan menaruh password di command line atau repository. Detail lengkap tersedia di [specs/account-policy.md](specs/account-policy.md).
+
 ### Konfigurasi runtime
 
 Semua path dan port dapat diubah melalui environment variable tanpa mengubah source:

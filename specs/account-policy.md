@@ -24,6 +24,23 @@ node server.js
 
 Server hanya membuat akun yang belum ada. Setelah akun pertama dibuat, mengganti environment variable tidak otomatis mengganti password akun yang sudah tersimpan.
 
+## Reset password lokal
+
+Jika password akun lupa, gunakan utilitas lokal berikut dari folder repository. Utilitas ini tidak menampilkan password saat diketik, tidak menghapus data siswa/presensi/laporan, dan mengeluarkan semua sesi akun yang direset:
+
+```powershell
+node reset-password.js admin.sekolah
+```
+
+Ganti `admin.sekolah` dengan ID akun yang akan dipulihkan. Password baru harus minimal 12 karakter dan akan diminta dua kali secara tersembunyi. Setelah berhasil, login menggunakan ID tersebut dan password baru. Jika database memakai lokasi lain, set `DATABASE_PATH` terlebih dahulu:
+
+```powershell
+$env:DATABASE_PATH = "data/presensi.sqlite"
+node reset-password.js admin.sekolah
+```
+
+Jalankan perintah ini hanya secara lokal dan jangan memasukkan password ke command line, file dokumentasi, atau repository. Utilitas mencatat tindakan reset ke audit tanpa menyimpan password asli. Jika server sedang berjalan, sesi akun yang direset akan dikeluarkan dan pengguna harus login kembali.
+
 ## Alur penggunaan
 
 1. Admin login menggunakan akun admin.
@@ -51,7 +68,7 @@ Server hanya membuat akun yang belum ada. Setelah akun pertama dibuat, mengganti
 - Cookie session harus `HttpOnly`, `SameSite=Lax`, dan hanya dikirim ke path aplikasi.
 - Role dari UI atau payload request tidak dipercaya; role dibaca dari session server-side.
 - Password akun siswa harus dipulihkan melalui proses reset yang ditetapkan admin, bukan dikirim ulang sebagai password lama.
-- UI administrasi akun, reset password, penonaktifan akun, dan audit viewer masih menjadi pekerjaan lanjutan.
+- UI administrasi akun, penonaktifan akun, dan audit viewer masih menjadi pekerjaan lanjutan. Reset password lokal tersedia melalui `reset-password.js`; reset password melalui UI admin masih belum tersedia.
 
 ## Konfigurasi V2
 
