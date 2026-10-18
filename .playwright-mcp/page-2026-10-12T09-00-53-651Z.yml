@@ -1,0 +1,150 @@
+- generic [ref=e27]:
+  - complementary [ref=e28]:
+    - generic [ref=e29]:
+      - generic [ref=e30]: SJ
+      - generic [ref=e31]:
+        - strong [ref=e32]: Sasmita Jaya
+        - generic [ref=e33]: Presensi PKL
+    - generic [ref=e34]:
+      - generic [ref=e35]: RA
+      - generic [ref=e36]:
+        - strong [ref=e37]: Raka Aditya
+        - generic [ref=e38]: Siswa · XI RPL 2
+      - button "Buka menu akun" [ref=e39] [cursor=pointer]: •••
+    - navigation "Navigasi utama" [ref=e40]:
+      - paragraph [ref=e41]: Ruang kerja
+      - button "◫ Dashboard" [ref=e42] [cursor=pointer]:
+        - generic [ref=e43]: ◫
+        - text: Dashboard
+      - button "▤ Rekap presensi" [active] [ref=e44] [cursor=pointer]:
+        - generic [ref=e45]: ▤
+        - text: Rekap presensi
+      - button "◎ Data siswa" [ref=e46] [cursor=pointer]:
+        - generic [ref=e47]: ◎
+        - text: Data siswa
+      - button "↥ Laporan PKL" [ref=e48] [cursor=pointer]:
+        - generic [ref=e49]: ↥
+        - text: Laporan PKL
+      - paragraph [ref=e50]: Lainnya
+      - button "⚙ Pengaturan" [ref=e51] [cursor=pointer]:
+        - generic [ref=e52]: ⚙
+        - text: Pengaturan
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - generic [ref=e55]: "?"
+        - generic [ref=e56]:
+          - strong [ref=e57]: Butuh bantuan?
+          - generic [ref=e58]: Hubungi admin sekolah
+      - button "↪ Keluar" [ref=e59] [cursor=pointer]
+  - main [ref=e60]:
+    - generic [ref=e61]:
+      - generic [ref=e62]:
+        - text: Ruang siswa/
+        - strong [ref=e63]: Rekap presensi
+      - generic [ref=e64]:
+        - generic [ref=e65]: Sistem aktif
+        - button "Notifikasi" [ref=e66] [cursor=pointer]: ♢
+        - generic [ref=e68]: RA
+    - generic [ref=e243]:
+      - generic [ref=e244]:
+        - generic [ref=e245]:
+          - paragraph [ref=e246]: Administrasi kehadiran
+          - heading "Rekap presensi" [level=1] [ref=e247]
+          - paragraph [ref=e248]: Pantau catatan kehadiran PKL kamu dalam satu tampilan.
+        - button "↓ Unduh laporan" [ref=e249] [cursor=pointer]
+      - generic [ref=e250]:
+        - generic [ref=e251]:
+          - text: Periode
+          - combobox "Periode" [ref=e252]:
+            - option "Oktober 2024" [selected]
+            - option "September 2024"
+        - generic [ref=e253]:
+          - text: Status
+          - combobox "Status" [ref=e254]:
+            - option "Semua status" [selected]
+            - option "Hadir"
+            - option "Tidak hadir"
+            - option "Sakit"
+        - generic [ref=e255]:
+          - text: 25 hari kerja ·
+          - strong [ref=e256]: 23 tercatat
+      - table [ref=e259]:
+        - rowgroup [ref=e260]:
+          - row [ref=e261]:
+            - columnheader "TANGGAL" [ref=e262]
+            - columnheader "JAM MASUK" [ref=e263]
+            - columnheader "JAM PULANG" [ref=e264]
+            - columnheader "STATUS" [ref=e265]
+            - columnheader "LOKASI" [ref=e266]
+            - columnheader "DETAIL FOTO" [ref=e267]
+        - rowgroup [ref=e268]:
+          - row [ref=e269]:
+            - cell "Jumat, 18 Sep 2026" [ref=e270]:
+              - strong [ref=e271]: Jumat, 18 Sep
+              - generic [ref=e272]: "2026"
+            - cell "22.41" [ref=e273]
+            - cell "—" [ref=e274]
+            - cell "Hadir" [ref=e275]
+            - cell "Lokasi tidak tersedia Lokasi tidak tersedia" [ref=e277]:
+              - text: Lokasi tidak tersedia
+              - generic [ref=e279]: Lokasi tidak tersedia
+            - cell "Data lama · - Diambil 18/9/2026, 22.41.33 Tersimpan 18/9/2026, 22.41.33 ? × ? px · - · - byte presensi-2026-09-18T15-41-33-160Z.jpg" [ref=e280]:
+              - strong [ref=e281]: Data lama · -
+              - generic [ref=e282]: Diambil 18/9/2026, 22.41.33
+              - generic [ref=e283]: Tersimpan 18/9/2026, 22.41.33
+              - generic [ref=e284]: "? × ? px · - · - byte"
+              - generic [ref=e285]: presensi-2026-09-18T15-41-33-160Z.jpg
+          - row [ref=e286]:
+            - cell "Senin, 14 Okt 2024" [ref=e287]:
+              - strong [ref=e288]: Senin, 14 Okt
+              - generic [ref=e289]: "2024"
+            - cell "07:28" [ref=e290]
+            - cell "—" [ref=e291]
+            - cell "Hadir" [ref=e292]
+            - cell "Perusahaan" [ref=e294]
+            - cell "Presensi masuk tercatat" [ref=e296]
+          - row [ref=e297]:
+            - cell "Jumat, 11 Okt 2024" [ref=e298]:
+              - strong [ref=e299]: Jumat, 11 Okt
+              - generic [ref=e300]: "2024"
+            - cell "07:42" [ref=e301]
+            - cell "16:05" [ref=e302]
+            - cell "Hadir" [ref=e303]
+            - cell "Perusahaan" [ref=e305]
+            - cell "Tepat waktu" [ref=e307]
+          - row [ref=e308]:
+            - cell "Kamis, 10 Okt 2024" [ref=e309]:
+              - strong [ref=e310]: Kamis, 10 Okt
+              - generic [ref=e311]: "2024"
+            - cell "08:16" [ref=e312]
+            - cell "16:11" [ref=e313]
+            - cell "Sakit" [ref=e314]
+            - cell "Sekolah" [ref=e316]
+            - cell "Surat keterangan sakit diterima" [ref=e318]
+          - row [ref=e319]:
+            - cell "Rabu, 09 Okt 2024" [ref=e320]:
+              - strong [ref=e321]: Rabu, 09 Okt
+              - generic [ref=e322]: "2024"
+            - cell "07:31" [ref=e323]
+            - cell "16:02" [ref=e324]
+            - cell "Hadir" [ref=e325]
+            - cell "Perusahaan" [ref=e327]
+            - cell "Tepat waktu" [ref=e329]
+          - row [ref=e330]:
+            - cell "Selasa, 08 Okt 2024" [ref=e331]:
+              - strong [ref=e332]: Selasa, 08 Okt
+              - generic [ref=e333]: "2024"
+            - cell "07:36" [ref=e334]
+            - cell "16:08" [ref=e335]
+            - cell "Hadir" [ref=e336]
+            - cell "Perusahaan" [ref=e338]
+            - cell "Tepat waktu" [ref=e340]
+          - row [ref=e341]:
+            - cell "Senin, 07 Okt 2024" [ref=e342]:
+              - strong [ref=e343]: Senin, 07 Okt
+              - generic [ref=e344]: "2024"
+            - cell "07:29" [ref=e345]
+            - cell "16:00" [ref=e346]
+            - cell "Hadir" [ref=e347]
+            - cell "Perusahaan" [ref=e349]
+            - cell "Tepat waktu" [ref=e351]

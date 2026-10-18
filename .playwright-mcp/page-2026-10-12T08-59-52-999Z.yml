@@ -1,0 +1,35 @@
+- main [ref=e2]:
+  - region [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: SJ
+      - generic [ref=e6]:
+        - strong [ref=e7]: Sasmita Jaya
+        - generic [ref=e8]: Presensi PKL
+    - generic [ref=e9]:
+      - paragraph [ref=e10]: Ruang kerja sekolah
+      - heading "Selamat datang kembali." [level=1] [ref=e11]
+      - paragraph [ref=e12]: Masuk untuk mengelola presensi dan aktivitas PKL kamu.
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - text: Masuk sebagai
+        - combobox "Masuk sebagai" [ref=e15]:
+          - option "Pilih peran" [disabled] [selected]
+          - option "Guru"
+          - option "Siswa/Siswi"
+      - generic [ref=e16]:
+        - text: NIS / ID
+        - textbox "NIS / ID" [ref=e17]:
+          - /placeholder: Masukkan NIS atau ID
+      - generic [ref=e18]:
+        - text: Password
+        - generic [ref=e19]:
+          - textbox "Password Tampilkan password" [ref=e20]:
+            - /placeholder: Masukkan password
+          - button "Tampilkan password" [ref=e21] [cursor=pointer]: ◉
+      - alert [ref=e22]
+      - button "Masuk ke dashboard →" [ref=e23] [cursor=pointer]:
+        - text: Masuk ke dashboard
+        - generic [ref=e24]: →
+    - paragraph [ref=e25]:
+      - generic [ref=e26]: ◈
+      - text: Akses aman untuk komunitas Sasmita Jaya

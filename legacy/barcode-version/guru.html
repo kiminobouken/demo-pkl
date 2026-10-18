@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f0e8">
+    <title>Guru | Presensi PKL SMK Sasmita Jaya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand-lockup">
+                <div class="brand-mark">SJ</div>
+                <div>
+                    <strong>Sasmita Jaya</strong>
+                    <span>Presensi PKL</span>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <div class="avatar">RW</div>
+                <div>
+                    <strong>Rina Wulandari, S.Pd.</strong>
+                    <span>Guru pembimbing</span>
+                </div>
+            </div>
+
+            <nav class="side-nav" aria-label="Navigasi utama">
+                <p class="nav-label">Ruang kerja</p>
+                <button class="nav-item active" data-view="laporan"><span class="nav-icon">❏</span> Laporan masuk</button>
+                <button class="nav-item" data-view="presensi"><span class="nav-icon">▤</span> Presensi siswa</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="logout-button"><span>↪</span> Keluar</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="breadcrumb"><span>Ruang guru</span><b>/</b><strong id="page-breadcrumb">Guru</strong>
+                </div>
+                <div class="topbar-actions">
+                    <span class="live-dot">Sistem aktif</span>
+                    <div class="mini-avatar">RW</div>
+                </div>
+            </header>
+
+            <div class="content-wrap">
+                <section class="view active" id="laporan-view">
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Siswa bimbingan</p>
+                            <h1>Laporan masuk</h1>
+                            <p class="subheading">Soft copy laporan PKL yang diunggah siswa bimbingan kamu.</p>
+                        </div>
+                    </div>
+                    <div class="filter-bar"><label>Status<select id="laporan-filter">
+                                <option value="semua">Semua status</option>
+                                <option value="sudah">Sudah mengumpulkan</option>
+                                <option value="belum">Belum mengumpulkan</option>
+                            </select></label>
+                        <div class="filter-summary" id="laporan-summary"></div>
+                    </div>
+                    <div class="panel full-panel">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr><th>SISWA</th><th>KELAS</th><th>FILE LAPORAN</th><th>DIKIRIM</th><th>STATUS</th><th></th></tr>
+                                </thead>
+                                <tbody id="laporan-table"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="view" id="presensi-view">
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Kegiatan PKL</p>
+                            <h1>Presensi siswa</h1>
+                            <p class="subheading">Catatan scan barcode kartu siswa bimbingan kamu, terbaru di atas.</p>
+                        </div>
+                    </div>
+                    <div class="panel full-panel">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr><th>WAKTU</th><th>SISWA</th><th>KELAS</th><th>JENIS</th><th>STATUS</th></tr>
+                                </thead>
+                                <tbody id="presensi-table"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="shared.js"></script>
+    <script src="guru.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,199 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - complementary [ref=f1e3]:
+      - generic [ref=f1e4]:
+        - generic [ref=f1e5]: SJ
+        - generic [ref=f1e6]:
+          - strong [ref=f1e7]: Sasmita Jaya
+          - generic [ref=f1e8]: Presensi PKL
+      - generic [ref=f1e9]:
+        - generic [ref=f1e10]: RA
+        - generic [ref=f1e11]:
+          - strong [ref=f1e12]: Raka Aditya
+          - generic [ref=f1e13]: Siswa · XI RPL 2
+        - button "Buka menu akun" [ref=f1e14] [cursor=pointer]: •••
+      - navigation "Navigasi utama" [ref=f1e15]:
+        - paragraph [ref=f1e16]: Ruang kerja
+        - button "◫ Dashboard" [ref=f1e17] [cursor=pointer]:
+          - generic [ref=f1e18]: ◫
+          - text: Dashboard
+        - button "▤ Rekap presensi" [ref=f1e19] [cursor=pointer]:
+          - generic [ref=f1e20]: ▤
+          - text: Rekap presensi
+        - button "❏ Laporan PKL" [ref=f1e21] [cursor=pointer]:
+          - generic [ref=f1e22]: ❏
+          - text: Laporan PKL
+        - button "◎ Data siswa" [ref=f1e23] [cursor=pointer]:
+          - generic [ref=f1e24]: ◎
+          - text: Data siswa
+        - paragraph [ref=f1e25]: Lainnya
+        - button "⚙ Pengaturan" [ref=f1e26] [cursor=pointer]:
+          - generic [ref=f1e27]: ⚙
+          - text: Pengaturan
+      - generic [ref=f1e28]: "?"
+    - main [ref=f1e31]:
+      - generic [ref=f1e32]:
+        - generic [ref=f1e33]:
+          - text: Ruang siswa/
+          - strong [ref=f1e34]: Dashboard
+        - generic [ref=f1e35]:
+          - button "Notifikasi" [ref=f1e36] [cursor=pointer]: ♢
+          - generic [ref=f1e38]: RA
+      - generic [ref=f1e40]:
+        - generic [ref=f1e41]:
+          - generic [ref=f1e42]:
+            - paragraph [ref=f1e43]: Senin, 14 Oktober 2024 · Minggu ke-6
+            - heading "Selamat pagi, Raka." [level=1] [ref=f1e44]
+            - paragraph [ref=f1e45]: Satu langkah kecil hari ini untuk perjalanan PKL yang lebih tertib.
+          - button "▣ Presensi sekarang" [active] [ref=f1e46] [cursor=pointer]
+        - generic [ref=f1e47]:
+          - article [ref=f1e48]:
+            - generic [ref=f1e49]:
+              - generic [ref=f1e50]: ◷
+              - generic [ref=f1e51]: +8.2%
+            - strong [ref=f1e52]: 96.4%
+            - text: Kehadiran bulan ini
+          - article [ref=f1e64]:
+            - generic [ref=f1e65]:
+              - generic [ref=f1e66]: ◒
+              - generic [ref=f1e67]: Bulan ini
+            - strong [ref=f1e68]: "22"
+            - text: Hari hadir Target 25 hari
+          - article [ref=f1e71]:
+            - generic [ref=f1e72]:
+              - generic [ref=f1e73]: ◌
+              - generic [ref=f1e74]: Rata-rata
+            - strong [ref=f1e75]: 07:54
+            - text: Jam masuk
+          - article [ref=f1e84]:
+            - generic [ref=f1e85]:
+              - generic [ref=f1e86]: "!"
+              - generic [ref=f1e87]: Perlu perhatian
+            - strong [ref=f1e88]: "1"
+            - text: Keterlambatan
+            - link "Lihat detail →" [ref=f1e89] [cursor=pointer]:
+              - /url: "#rekap"
+        - generic [ref=f1e90]:
+          - article [ref=f1e91]:
+            - generic [ref=f1e92]:
+              - generic [ref=f1e93]:
+                - paragraph [ref=f1e94]: Jadwal hari ini
+                - heading "Senin, 14 Oktober" [level=2] [ref=f1e95]
+              - button "Lihat jadwal lengkap" [ref=f1e96] [cursor=pointer]: •••
+            - generic [ref=f1e97]:
+              - generic [ref=f1e98]:
+                - generic [ref=f1e99]: 07:30
+                - generic [ref=f1e102]:
+                  - strong [ref=f1e103]: Jam masuk PKL
+                  - generic [ref=f1e104]: PT. Kreasi Digital Nusantara
+                - generic [ref=f1e105]: Hadir
+              - generic [ref=f1e106]:
+                - generic [ref=f1e107]: 12:00
+                - generic [ref=f1e110]:
+                  - strong [ref=f1e111]: Istirahat
+                  - generic [ref=f1e112]: Waktu istirahat siang
+                - generic [ref=f1e113]: Terjadwal
+              - generic [ref=f1e114]:
+                - generic [ref=f1e115]: 16:00
+                - generic [ref=f1e118]:
+                  - strong [ref=f1e119]: Jam pulang PKL
+                  - generic [ref=f1e120]: Jangan lupa presensi pulang
+                - generic [ref=f1e121]: Belum
+          - article [ref=f1e122]:
+            - generic [ref=f1e123]:
+              - generic [ref=f1e124]:
+                - paragraph [ref=f1e125]: Lokasi PKL
+                - heading "Perusahaan kamu" [level=2] [ref=f1e126]
+              - generic [ref=f1e127]: ✓ Terverifikasi
+            - generic [ref=f1e128]:
+              - generic [ref=f1e129]: KD
+              - generic [ref=f1e130]:
+                - heading "PT. Kreasi Digital Nusantara" [level=3] [ref=f1e131]
+                - paragraph [ref=f1e132]: Jl. BSD Raya Utama No. 18Serpong, Tangerang Selatan
+            - generic [ref=f1e133]:
+              - generic [ref=f1e134]:
+                - generic [ref=f1e135]: Pembimbing lapangan
+                - strong [ref=f1e136]: Andi Pratama
+              - generic [ref=f1e137]:
+                - generic [ref=f1e138]: Durasi PKL
+                - strong [ref=f1e139]: 01 Sep – 30 Nov 2024
+            - button "Lihat detail lokasi ↗" [ref=f1e140] [cursor=pointer]:
+              - text: Lihat detail lokasi
+              - generic [ref=f1e141]: ↗
+        - generic [ref=f1e142]:
+          - generic [ref=f1e143]:
+            - generic [ref=f1e144]:
+              - paragraph [ref=f1e145]: Aktivitas terbaru
+              - heading "Riwayat presensi" [level=2] [ref=f1e146]
+            - button "Lihat semua →" [ref=f1e147] [cursor=pointer]
+          - table [ref=f1e149]:
+            - rowgroup [ref=f1e150]:
+              - row [ref=f1e151]:
+                - columnheader "TANGGAL" [ref=f1e152]
+                - columnheader "JAM MASUK" [ref=f1e153]
+                - columnheader "JAM PULANG" [ref=f1e154]
+                - columnheader "STATUS" [ref=f1e155]
+                - columnheader "LOKASI" [ref=f1e156]
+                - columnheader [ref=f1e157]
+            - rowgroup [ref=f1e158]:
+              - row [ref=f1e159]:
+                - cell "Senin, 14 Okt 2024" [ref=f1e160]:
+                  - strong [ref=f1e161]: Senin, 14 Okt
+                  - generic [ref=f1e162]: "2024"
+                - cell "07:28" [ref=f1e163]
+                - cell "—" [ref=f1e164]
+                - cell "Hadir" [ref=f1e165]
+                - cell "Perusahaan" [ref=f1e167]
+                - cell [ref=f1e169]:
+                  - button "Menu baris" [ref=f1e170] [cursor=pointer]: •••
+              - row [ref=f1e171]:
+                - cell "Jumat, 11 Okt 2024" [ref=f1e172]:
+                  - strong [ref=f1e173]: Jumat, 11 Okt
+                  - generic [ref=f1e174]: "2024"
+                - cell "07:42" [ref=f1e175]
+                - cell "16:05" [ref=f1e176]
+                - cell "Hadir" [ref=f1e177]
+                - cell "Perusahaan" [ref=f1e179]
+                - cell [ref=f1e181]:
+                  - button "Menu baris" [ref=f1e182] [cursor=pointer]: •••
+              - row [ref=f1e183]:
+                - cell "Kamis, 10 Okt 2024" [ref=f1e184]:
+                  - strong [ref=f1e185]: Kamis, 10 Okt
+                  - generic [ref=f1e186]: "2024"
+                - cell "08:16" [ref=f1e187]
+                - cell "16:11" [ref=f1e188]
+                - cell "Terlambat" [ref=f1e189]
+                - cell "Sekolah" [ref=f1e191]
+                - cell [ref=f1e193]:
+                  - button "Menu baris" [ref=f1e194] [cursor=pointer]: •••
+  - dialog [ref=f1e195]:
+    - generic [ref=f1e196]:
+      - button "Tutup" [ref=f1e197] [cursor=pointer]: ×
+      - paragraph [ref=f1e198]: Presensi masuk / pulang
+      - heading "Scan barcode kartu siswa" [level=2] [ref=f1e199]
+      - paragraph [ref=f1e200]: Arahkan barcode pada kartu siswa ke kamera. Frame dibekukan saat barcode cocok; waktu dan koordinat dicatat bersama presensi. Foto tidak diunggah.
+      - generic [ref=f1e201]:
+        - generic [ref=f1e202]: ▥
+        - generic [ref=f1e203]: Kamera belum diaktifkan
+      - button "◉ Buka kamera & scan" [ref=f1e205] [cursor=pointer]
+      - region "Metadata presensi" [ref=f1e206]:
+        - generic [ref=f1e207]:
+          - strong [ref=f1e208]: Metadata pengambilan
+          - button "Perbarui lokasi" [ref=f1e209] [cursor=pointer]
+        - paragraph [ref=f1e210]:
+          - generic [ref=f1e211]: Waktu
+          - strong [ref=f1e212]: Belum diambil
+        - paragraph [ref=f1e213]:
+          - generic [ref=f1e214]: Lokasi
+          - strong [ref=f1e215]: Belum diminta
+        - paragraph [ref=f1e216]:
+          - generic [ref=f1e217]: Koordinat
+          - strong [ref=f1e218]: "-"
+      - generic [ref=f1e219]:
+        - generic [ref=f1e220]: Atau masukkan kode barcode manual
+        - generic [ref=f1e221]:
+          - textbox "Atau masukkan kode barcode manual" [ref=f1e222]:
+            - /placeholder: "Contoh: 202312047"
+          - button "Pakai kode" [ref=f1e223] [cursor=pointer]
+      - generic [ref=f1e224]: Belum ada barcode terbaca
+      - button "Simpan presensi" [disabled] [ref=f1e227] [cursor=pointer]

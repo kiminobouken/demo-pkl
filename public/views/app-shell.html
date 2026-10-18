@@ -1,0 +1,397 @@
+<div class="app-shell" id="app-shell">
+        <aside class="sidebar">
+            <div class="brand-lockup">
+                <div class="brand-mark">SJ</div>
+                <div>
+                    <strong>Sasmita Jaya</strong>
+                    <span>Presensi PKL</span>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <div class="avatar" id="current-user-avatar">SJ</div>
+                <div>
+                    <strong id="current-user-name">Pengguna</strong>
+                    <span id="current-user-role">Belum masuk</span>
+                </div>
+                <button class="icon-button" aria-label="Buka menu akun" title="Menu akun">•••</button>
+            </div>
+
+            <nav class="side-nav" aria-label="Navigasi utama">
+                <p class="nav-label">Ruang kerja</p>
+                <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◫</span> Dashboard</button>
+                <button class="nav-item" data-view="rekap"><span class="nav-icon">▤</span> Rekap presensi</button>
+                <button class="nav-item" data-view="siswa"><span class="nav-icon">◎</span> Data siswa</button>
+                <button class="nav-item" data-view="laporan"><span class="nav-icon">↥</span> Laporan PKL</button>
+                <button class="nav-item teacher-only teacher-nav-item" data-teacher-only data-view="notifikasi"><span class="nav-icon">♢</span> Notifikasi <span class="nav-badge" id="notification-nav-count" hidden></span></button>
+                <button class="nav-item teacher-only teacher-nav-item" data-teacher-only data-view="profil-guru"><span class="nav-icon">◎</span> Profil guru</button>
+                <p class="nav-label nav-label-spaced">Lainnya</p>
+                <button class="nav-item" data-view="pengaturan"><span class="nav-icon">⚙</span> Pengaturan</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="help-card">
+                    <span class="help-icon">?</span>
+                    <div><strong>Butuh bantuan?</strong><span>Hubungi admin sekolah</span></div>
+                </div>
+                <button class="logout-button" id="logout-button"><span>↪</span> Keluar</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="breadcrumb"><span id="workspace-label">Ruang siswa</span><b>/</b><strong id="page-breadcrumb">Dashboard</strong>
+                </div>
+                <div class="topbar-actions">
+                    <span class="live-dot">Sistem aktif</span>
+                    <button class="notification-button teacher-only" data-teacher-only id="open-notifications" aria-label="Notifikasi"
+                        title="Notifikasi"><span>♢</span><i id="notification-indicator" hidden></i></button>
+                    <div class="mini-avatar" id="current-user-mini-avatar">SJ</div>
+                </div>
+            </header>
+
+            <div class="content-wrap">
+                <section class="view active" id="dashboard-view">
+                    <div class="welcome-row">
+                        <div>
+                            <p class="eyebrow" id="dashboard-date"></p>
+                            <h1 id="welcome-title">Selamat datang.</h1>
+                            <p class="subheading">Satu langkah kecil hari ini untuk perjalanan PKL yang lebih tertib.
+                            </p>
+                        </div>
+                        <button class="primary-button student-report-content" data-student-only id="open-qr"><span>▣</span> Presensi sekarang</button>
+                    </div>
+
+                    <div class="stats-grid">
+                        <article class="stat-card highlight">
+                            <div class="stat-top"><span class="stat-icon">◷</span><span class="muted-label">Bulan ini</span>
+                            </div><strong id="attendance-rate">—</strong><span>Hadir dari status tercatat</span>
+                        </article>
+                        <article class="stat-card">
+                            <div class="stat-top"><span class="stat-icon coral">◒</span><span class="muted-label">Bulan
+                                    ini</span></div><strong id="present-count">0</strong><span>Catatan hadir</span>
+                        </article>
+                        <article class="stat-card">
+                            <div class="stat-top"><span class="stat-icon blue">◌</span><span
+                                    class="muted-label">Bulan ini</span></div><strong id="average-arrival">—</strong><span>Rata-rata jam masuk</span>
+                        </article>
+                        <article class="stat-card">
+                                <div class="stat-top"><span class="stat-icon yellow">!</span><span class="muted-label">Perlu
+                                    perhatian</span></div><strong id="sick-count">0</strong><span>Catatan sakit</span><a
+                                href="#rekap" data-view-link="rekap">Lihat detail →</a>
+                        </article>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <article class="panel schedule-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Jadwal hari ini</p>
+                                    <h2 id="today-schedule-date">Hari ini</h2>
+                                </div><button class="more-button" aria-label="Lihat jadwal lengkap">•••</button>
+                            </div>
+                            <div class="timeline">
+                                <div class="timeline-item done"><span class="timeline-time">07:30</span><span
+                                        class="timeline-line"><i></i></span>
+                                    <div><strong>Jam masuk PKL</strong><span>Lokasi praktik hari ini</span></div><b
+                                        class="status-pill neutral" id="today-attendance-status">Belum presensi</b>
+                                </div>
+                                <div class="timeline-item next"><span class="timeline-time">12:00</span><span
+                                        class="timeline-line"><i></i></span>
+                                    <div><strong>Istirahat</strong><span>Waktu istirahat siang</span></div><b
+                                        class="status-pill neutral">Terjadwal</b>
+                                </div>
+                                <div class="timeline-item"><span class="timeline-time">16:00</span><span
+                                        class="timeline-line"><i></i></span>
+                                    <div><strong>Jam pulang PKL</strong><span>Jangan lupa presensi pulang</span></div><b
+                                        class="status-pill outline">Belum</b>
+                                </div>
+                            </div>
+                        </article>
+                        <article class="panel company-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Lokasi PKL</p>
+                                    <h2>Perusahaan kamu</h2>
+                                </div><span class="verified-badge" id="pkl-location-status">Belum diatur</span>
+                            </div>
+                            <div class="company-hero">
+                                <div class="company-logo">KD</div>
+                                <div>
+                                    <h3 id="pkl-company-name">Lokasi PKL belum dipilih</h3>
+                                    <p id="pkl-company-address">Pilih lokasi PKL untuk melihat alamat perusahaan.</p>
+                                </div>
+                            </div>
+                            <div class="company-meta" id="pkl-location-meta"></div>
+                            <button class="secondary-button full-width" id="show-location">Lihat detail lokasi
+                                <span>↗</span></button>
+                        </article>
+                    </div>
+
+                    <div class="panel recent-panel">
+                        <div class="panel-heading">
+                            <div>
+                                <p class="eyebrow">Aktivitas terbaru</p>
+                                <h2>Riwayat presensi</h2>
+                            </div><button class="text-button" data-view-link="rekap">Lihat semua <span>→</span></button>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>TANGGAL</th>
+                                        <th>JAM MASUK</th>
+                                        <th>JAM PULANG</th>
+                                        <th>STATUS</th>
+                                        <th>LOKASI</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-table"><tr><td colspan="6">Belum ada catatan presensi.</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="view" id="rekap-view">
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Administrasi kehadiran</p>
+                            <h1>Rekap presensi</h1>
+                            <p class="subheading">Pantau catatan kehadiran PKL kamu dalam satu tampilan.</p>
+                        </div><button class="secondary-button">↓ Unduh laporan</button>
+                    </div>
+                    <div class="filter-bar"><label>Periode<select id="period-filter">
+                                <option value="all">Semua periode</option>
+                                <option value="month">Bulan ini</option>
+                            </select></label><label>Status<select id="status-filter">
+                                <option>Semua status</option>
+                                <option>Hadir</option>
+                                <option>Tidak hadir</option>
+                                <option>Sakit</option>
+                            </select></label>
+                        <div class="filter-summary"><strong id="attendance-summary-count">0 catatan</strong></div>
+                    </div>
+                    <div class="panel full-panel">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>TANGGAL</th>
+                                        <th>JAM MASUK</th>
+                                        <th>JAM PULANG</th>
+                                        <th>STATUS</th>
+                                        <th>LOKASI</th>
+                                        <th>DETAIL FOTO</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="full-table"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="view" id="siswa-view">
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Profil peserta</p>
+                            <h1>Data siswa</h1>
+                            <p class="subheading">Informasi penempatan PKL dan pembimbing yang terhubung.</p>
+                        </div>
+                        <div class="student-import-actions teacher-only" data-teacher-only>
+                            <input id="student-csv" type="file" accept=".csv,text/csv" hidden>
+                            <button class="secondary-button" id="choose-student-csv" type="button">↥ Impor CSV</button>
+                            <p id="student-import-status" role="status">Kolom wajib: Nama Siswa dan NISN.</p>
+                        </div>
+                    </div>
+                    <div class="profile-grid">
+                        <article class="panel student-profile">
+                            <div class="large-avatar" id="student-profile-avatar">SJ</div>
+                            <p class="eyebrow">Peserta PKL</p>
+                            <h2 id="student-profile-name">Belum ada siswa dipilih</h2>
+                            <p class="subheading" id="student-profile-role">Data akan ditampilkan setelah login.</p>
+                            <div class="profile-details">
+                                <div><span>NISN</span><strong id="student-profile-nisn">-</strong></div>
+                                <div><span>Penempatan</span><strong id="student-profile-placement">Belum ditentukan</strong></div>
+                            </div>
+                        </article>
+                        <article class="panel company-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Penempatan aktif</p>
+                                    <h2>Tempat PKL</h2>
+                                </div><span class="verified-badge">✓ Aktif</span>
+                            </div>
+                            <div class="company-hero">
+                                <div class="company-logo">KD</div>
+                                <div>
+                                    <h3 id="profile-pkl-company">Lokasi PKL belum dipilih</h3>
+                                    <p id="profile-pkl-address">Guru dapat menetapkan tempat PKL pada data siswa.</p>
+                                </div>
+                            </div>
+                            <button class="secondary-button full-width student-only" id="edit-student-location" type="button">Atur tempat PKL</button>
+                        </article>
+                    </div>
+                    <article class="panel teacher-location-panel teacher-only" id="teacher-location-panel" data-teacher-only>
+                        <div>
+                            <p class="eyebrow">Penempatan siswa</p>
+                            <h2>Daftar tempat PKL</h2>
+                            <p class="subheading">Tambahkan nama PT dan alamatnya agar tersedia untuk dipilih siswa.</p>
+                        </div>
+                        <form id="pkl-location-form" class="pkl-location-form">
+                            <label>Nama PT / tempat PKL<input id="pkl-company-input" name="companyName" maxlength="120" required placeholder="Contoh: PT Sasmita Digital"></label>
+                            <label>Alamat<input id="pkl-address-input" name="address" maxlength="500" required placeholder="Alamat lengkap tempat PKL"></label>
+                            <label>Latitude (opsional)<input id="pkl-latitude-input" name="latitude" type="number" min="-90" max="90" step="any" placeholder="-6.2"></label>
+                            <label>Longitude (opsional)<input id="pkl-longitude-input" name="longitude" type="number" min="-180" max="180" step="any" placeholder="106.8"></label>
+                            <button class="primary-button" type="submit" id="save-pkl-location">Tambah lokasi</button>
+                        </form>
+                        <p class="form-status" id="pkl-location-form-status" role="status"></p>
+                    </article>
+                    <article class="panel student-list-panel">
+                        <div class="panel-heading">
+                            <div>
+                                <p class="eyebrow">Master data</p>
+                                <h2>Daftar siswa</h2>
+                            </div>
+                            <span class="status-pill neutral" id="student-count">0 siswa</span>
+                        </div>
+                        <div class="student-table-wrap">
+                            <table class="student-table">
+                                <thead>
+                                    <tr><th>NAMA SISWA</th><th>NISN</th><th>NO. HP ORANG TUA</th><th>TEMPAT PKL</th></tr>
+                                </thead>
+                                <tbody id="students-table-body">
+                                    <tr><td colspan="4">Belum ada data siswa.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="view" id="laporan-view">
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Dokumen pembelajaran</p>
+                            <h1>Laporan PKL</h1>
+                            <p class="subheading">Upload laporan PKL untuk diperiksa dan disimpan oleh pembimbing.</p>
+                        </div>
+                    </div>
+                    <div class="report-layout student-report-content" data-student-only>
+                        <form class="panel upload-panel" id="report-form">
+                            <div class="upload-icon">↥</div>
+                            <p class="eyebrow">Upload dokumen</p>
+                            <h2>Kirim laporan PKL kamu</h2>
+                            <p class="modal-copy">Gunakan format PDF, DOC, atau DOCX dengan ukuran maksimal 10 MB.</p>
+                            <label class="file-dropzone" for="report-file">
+                                <input id="report-file" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+                                <strong>Pilih file laporan</strong><span id="report-file-name">Belum ada file dipilih</span>
+                            </label>
+                            <p class="upload-error" id="upload-error" role="alert"></p>
+                            <button class="primary-button full-width" type="submit" id="upload-report">Upload laporan <span>↥</span></button>
+                        </form>
+                        <article class="panel report-info-panel">
+                            <p class="eyebrow">Panduan singkat</p>
+                            <h2>Sebelum mengirim</h2>
+                            <div class="report-check"><span>01</span><div><strong>Pastikan laporan lengkap</strong><small>Isi identitas, kegiatan, dan pengesahan pembimbing.</small></div></div>
+                            <div class="report-check"><span>02</span><div><strong>Gunakan nama file yang jelas</strong><small>Contoh: LaporanPKL_RakaAditya.docx</small></div></div>
+                            <div class="report-check"><span>03</span><div><strong>Tunggu konfirmasi</strong><small>Status laporan akan diperbarui setelah diperiksa.</small></div></div>
+                        </article>
+                    </div>
+                    <div class="panel report-history student-report-content" data-student-only>
+                        <div class="panel-heading"><div><p class="eyebrow">Arsip dokumen</p><h2>Laporan terakhir</h2></div><span class="status-pill neutral" id="report-status">Belum ada laporan</span></div>
+                        <div class="empty-report" id="report-empty"><span>▤</span><p>Belum ada laporan yang diupload.</p></div>
+                    </div>
+                    <article class="panel report-history teacher-only" data-teacher-only>
+                        <div class="panel-heading"><div><p class="eyebrow">Dokumen siswa</p><h2>Laporan yang masuk</h2></div><span class="status-pill neutral" id="teacher-report-count">0 laporan</span></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th>NAMA FILE</th><th>WAKTU UPLOAD</th><th></th></tr></thead>
+                                <tbody id="teacher-report-table"><tr><td colspan="3" class="empty-state">Memuat laporan...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="view" id="pengaturan-view">
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Preferensi akun</p>
+                            <h1>Pengaturan</h1>
+                            <p class="subheading">Atur preferensi notifikasi dan keamanan akun.</p>
+                        </div>
+                    </div>
+                    <div class="settings-list panel">
+                        <div class="setting-row theme-setting-row">
+                            <div><strong>Warna tampilan</strong><span>Pilih suasana warna yang paling nyaman untuk kamu.</span></div>
+                            <div class="theme-options" role="group" aria-label="Pilihan warna tampilan">
+                                <button class="theme-option theme-garden" data-theme="garden" aria-label="Tema Taman" aria-pressed="true" title="Tema Taman"><i></i><span>Taman</span></button>
+                                <button class="theme-option theme-ocean" data-theme="ocean" aria-label="Tema Laut" aria-pressed="false" title="Tema Laut"><i></i><span>Laut</span></button>
+                                <button class="theme-option theme-terracotta" data-theme="terracotta" aria-label="Tema Terracotta" aria-pressed="false" title="Tema Terracotta"><i></i><span>Terracotta</span></button>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div><strong>Aktivitas presensi siswa</strong><span>Tampilkan catatan presensi siswa di pusat notifikasi.</span></div><button class="toggle on notification-setting" data-notification-setting="attendance" type="button" role="switch" aria-checked="true" aria-label="Notifikasi presensi siswa"><i></i></button>
+                        </div>
+                        <div class="setting-row">
+                            <div><strong>Laporan PKL baru</strong><span>Tampilkan laporan baru yang dikirim siswa di pusat notifikasi.</span></div><button class="toggle on notification-setting" data-notification-setting="reports" type="button" role="switch" aria-checked="true" aria-label="Notifikasi laporan PKL"><i></i></button>
+                        </div>
+                        <div class="setting-row">
+                            <div><strong>Bahasa aplikasi</strong><span>Bahasa Indonesia</span></div><button
+                                class="select-button">Indonesia⌄</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="view teacher-only" id="notifikasi-view" data-teacher-only>
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Aktivitas siswa</p>
+                            <h1>Notifikasi</h1>
+                            <p class="subheading"><span id="notifications-unread">Tidak ada notifikasi belum dibaca.</span></p>
+                        </div>
+                        <div class="notification-actions">
+                            <button class="secondary-button" id="refresh-notifications" type="button" aria-label="Muat ulang notifikasi" title="Muat ulang">↻</button>
+                            <button class="secondary-button" id="mark-notifications-read" type="button">Tandai dibaca</button>
+                        </div>
+                    </div>
+                    <div class="panel notification-list" id="notification-list" aria-live="polite">
+                        <p class="empty-state">Memuat aktivitas...</p>
+                    </div>
+                </section>
+
+                <section class="view teacher-only" id="profil-guru-view" data-teacher-only>
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Akun pembimbing</p>
+                            <h1>Profil guru</h1>
+                            <p class="subheading">Identitas tampilan dan ringkasan data yang dikelola.</p>
+                        </div>
+                    </div>
+                    <div class="teacher-profile-layout">
+                        <article class="panel teacher-profile-summary">
+                            <div class="large-avatar" id="teacher-profile-avatar">GU</div>
+                            <p class="eyebrow">Guru pembimbing</p>
+                            <h2 id="teacher-profile-display-name">Guru</h2>
+                            <p class="subheading">SMK Sasmita Jaya</p>
+                            <div class="teacher-profile-stats">
+                                <div><strong id="teacher-student-count">0</strong><span>Siswa terdaftar</span></div>
+                                <div><strong id="teacher-placement-count">0</strong><span>Penempatan terisi</span></div>
+                            </div>
+                            <button class="secondary-button full-width" type="button" data-view-link="siswa">Buka data siswa <span>→</span></button>
+                        </article>
+                        <form class="panel teacher-profile-form" id="teacher-profile-form">
+                            <div>
+                                <p class="eyebrow">Informasi akun</p>
+                                <h2>Detail profil</h2>
+                            </div>
+                            <label for="teacher-profile-name-input">Nama tampilan<input id="teacher-profile-name-input" name="displayName" maxlength="80" autocomplete="name" required></label>
+                            <label for="teacher-profile-id">ID login<input id="teacher-profile-id" name="userId" readonly></label>
+                            <label for="teacher-profile-contact">Kontak<input id="teacher-profile-contact" name="contact" maxlength="120" autocomplete="email" placeholder="Email atau nomor telepon"></label>
+                            <p class="form-status" id="teacher-profile-status" role="status"></p>
+                            <button class="primary-button" type="submit">Simpan profil</button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>

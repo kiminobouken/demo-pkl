@@ -1,0 +1,37 @@
+<main class="login-screen" id="login-screen">
+        <div class="login-decoration" aria-hidden="true">
+            <span class="login-orbit orbit-one"></span>
+            <span class="login-orbit orbit-two"></span>
+            <span class="login-grid"></span>
+        </div>
+        <section class="login-card" aria-labelledby="login-title">
+            <div class="login-brand">
+                <div class="brand-mark">SJ</div>
+                <div><strong>Sasmita Jaya</strong><span>Presensi PKL</span></div>
+            </div>
+            <div class="login-heading">
+                <p class="eyebrow">Ruang kerja sekolah</p>
+                <h1 id="login-title">Selamat datang kembali.</h1>
+                <p>Masuk untuk mengelola presensi dan aktivitas PKL kamu.</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <label for="login-role">Masuk sebagai
+                    <select id="login-role" required>
+                        <option value="" selected disabled>Pilih peran</option>
+                        <option value="guru">Guru</option>
+                        <option value="admin">Admin</option>
+                        <option value="Siswa/Siswi">Siswa/Siswi</option>
+                    </select>
+                </label>
+                <label for="login-id">NIS / ID
+                    <input id="login-id" name="login-id" type="text" placeholder="Masukkan NIS atau ID" autocomplete="username" required>
+                </label>
+                <label for="login-password">Password
+                    <span class="password-field"><input id="login-password" name="password" type="password" placeholder="Masukkan password" autocomplete="current-password" required><button type="button" id="toggle-password" aria-label="Tampilkan password" title="Tampilkan password">◉</button></span>
+                </label>
+                <p class="login-error" id="login-error" role="alert"></p>
+                <button class="primary-button login-submit" type="submit" id="login-submit">Masuk ke dashboard <span>→</span></button>
+            </form>
+            <p class="login-note"><span>◈</span> Akses aman untuk komunitas Sasmita Jaya</p>
+        </section>
+    </main>

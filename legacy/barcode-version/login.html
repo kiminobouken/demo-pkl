@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f0e8">
+    <title>Masuk | Presensi PKL SMK Sasmita Jaya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="auth-shell">
+        <div class="auth-wrap">
+            <div class="auth-intro">
+                <div class="brand-lockup">
+                    <div class="brand-mark">SJ</div>
+                    <div>
+                        <strong>Sasmita Jaya</strong>
+                        <span>Presensi PKL</span>
+                    </div>
+                </div>
+                <h1>Satu sistem untuk siswa, guru, dan admin.</h1>
+                <p>Presensi dengan scan barcode kartu siswa, laporan PKL, dan pemantauan kegiatan siswa — semua dalam
+                    satu tempat.</p>
+                <div class="auth-points">
+                    <div class="auth-point"><span>✓</span>Siswa presensi dengan scan barcode kartu siswa, lalu unggah
+                        laporan PKL.</div>
+                    <div class="auth-point"><span>✓</span>Guru pembimbing memantau kehadiran dan laporan siswa
+                        bimbingan.</div>
+                    <div class="auth-point"><span>✓</span>Admin sekolah mengoreksi presensi bila diperlukan.</div>
+                </div>
+            </div>
+            <div class="auth-form">
+                <h2>Masuk ke akun</h2>
+                <p class="subheading">Pilih peranmu, lalu masuk dengan akun sekolah.</p>
+                <div class="role-switch" id="roleSwitch">
+                    <button type="button" class="active" data-role="siswa">Siswa</button>
+                    <button type="button" data-role="guru">Guru</button>
+                    <button type="button" data-role="admin">Admin</button>
+                </div>
+                <form id="loginForm">
+                    <div class="field-group">
+                        <label id="idLabel" for="idInput">NIS (Nomor Induk Siswa)</label>
+                        <input class="text-input" type="text" id="idInput" value="202312047">
+                    </div>
+                    <div class="field-group">
+                        <label for="pwInput">Kata sandi</label>
+                        <input class="text-input" type="password" id="pwInput" value="demo1234">
+                    </div>
+                    <button type="submit" class="primary-button full-width" id="loginBtn">Masuk sebagai Siswa</button>
+                </form>
+                <a class="auth-link" href="#">Lupa kata sandi?</a>
+            </div>
+        </div>
+    </div>
+    <script src="login.js"></script>
+</body>
+
+</html>

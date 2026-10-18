@@ -1,0 +1,42 @@
+<dialog class="student-location-dialog" id="student-location-dialog" aria-labelledby="student-location-title">
+        <form id="student-location-form">
+            <p class="eyebrow">Pengaturan awal</p>
+            <h2 id="student-location-title">Pilih lokasi PKL</h2>
+            <p class="modal-copy">Pilih tempat PKL kamu. Pilihan ini akan disimpan pada data siswa.</p>
+            <label for="student-location-choice">PT / tempat PKL</label>
+            <select id="student-location-choice" required></select>
+            <div class="student-other-location" id="student-other-location" hidden>
+                <label for="student-other-company">Nama PT / tempat PKL</label>
+                <input id="student-other-company" maxlength="120" placeholder="Contoh: PT Sasmita Digital">
+                <label for="student-other-address">Alamat tempat PKL</label>
+                <input id="student-other-address" maxlength="500" placeholder="Masukkan alamat lengkap">
+            </div>
+            <p class="form-status" id="student-location-status" role="status"></p>
+            <button class="primary-button full-width" id="save-student-location" type="submit">Simpan lokasi PKL</button>
+            <button class="secondary-button full-width" id="skip-student-location" type="button">Lewati dulu</button>
+            <button class="secondary-button full-width" id="logout-from-location" type="button">Keluar</button>
+        </form>
+    </dialog>
+
+    <div class="modal-backdrop" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-title">
+        <div class="modal"><button class="modal-close" id="close-qr" aria-label="Tutup">×</button>
+            <p class="eyebrow">Presensi masuk</p>
+            <h2 id="qr-title">Foto wajah untuk presensi</h2>
+            <p class="modal-copy">Ambil foto wajah sebagai bukti kehadiran di lokasi PKL.</p>
+            <div class="qr-frame" id="camera-frame">
+                <video id="camera-preview" autoplay playsinline muted></video>
+                <canvas id="face-capture"></canvas>
+                <div class="face-guide" id="face-placeholder">◯</div><span id="camera-status">Kamera belum
+                    diaktifkan</span>
+            </div>
+            <div class="modal-actions">
+                <button class="secondary-button" id="enable-camera"><span>◉</span> Buka kamera</button>
+                <button class="secondary-button" id="capture-face" disabled><span>◎</span> Ambil foto</button>
+            </div>
+            <div class="scan-status" id="location-status"><i></i><span>Lokasi belum dibagikan</span></div>
+            <button class="primary-button full-width" id="save-attendance" disabled>Simpan presensi</button>
+        </div>
+    </div>
+    <div class="toast" id="toast"><span>✓</span>
+        <div><strong>Presensi berhasil dicatat</strong><small>Jam masuk 07:28 · Lokasi terverifikasi</small></div>
+    </div>

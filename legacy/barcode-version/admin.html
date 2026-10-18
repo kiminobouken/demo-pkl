@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f0e8">
+    <title>Admin | Presensi PKL SMK Sasmita Jaya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand-lockup">
+                <div class="brand-mark">SJ</div>
+                <div>
+                    <strong>Sasmita Jaya</strong>
+                    <span>Presensi PKL</span>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <div class="avatar">AD</div>
+                <div>
+                    <strong>Admin Sekolah</strong>
+                    <span>Admin · SMK Sasmita Jaya</span>
+                </div>
+            </div>
+
+            <nav class="side-nav" aria-label="Navigasi utama">
+                <p class="nav-label">Ruang kerja</p>
+                <button class="nav-item active" data-view="koreksi"><span class="nav-icon">✎</span> Koreksi presensi</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="logout-button"><span>↪</span> Keluar</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="breadcrumb"><span>Ruang admin</span><b>/</b><strong id="page-breadcrumb">Admin</strong>
+                </div>
+                <div class="topbar-actions">
+                    <span class="live-dot">Sistem aktif</span>
+                    <div class="mini-avatar">AD</div>
+                </div>
+            </header>
+
+            <div class="content-wrap">
+                <section class="view active" id="koreksi-view">
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Administrasi kehadiran</p>
+                            <h1>Koreksi presensi</h1>
+                            <p class="subheading">Admin sekolah dapat mengoreksi status presensi. Data scan asli tetap tersimpan.</p>
+                        </div>
+                    </div>
+                    <div class="panel full-panel">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr><th>WAKTU</th><th>SISWA</th><th>KELAS</th><th>JENIS SCAN</th><th>STATUS / SUMBER</th><th>KOREKSI + ALASAN</th></tr>
+                                </thead>
+                                <tbody id="koreksi-table"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    <div class="toast" id="toast"><span>✓</span>
+        <div><strong></strong><small></small></div>
+    </div>
+    <script src="shared.js"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>
