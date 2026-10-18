@@ -210,3 +210,61 @@ Aturan akun:
 - Prosedur pemulihan akun siswa ketika lupa password belum ditentukan.
 - Integrasi laporan/notifikasi lanjutan masih belum ditentukan.
 - Hak akses dasar, retensi, dan audit privasi sudah dikonfirmasi pemilik proyek; detail operasionalnya tetap harus diuji pada task testing.
+
+## 6. Struktural folder yang mungkin dijadikan jika fitur terlalu banyak
+
+Bagian ini menjadi referensi arsitektur aplikasi jika jumlah fitur sudah terlalu banyak untuk dikelola dengan satu `app.js`, satu shell HTML, atau satu alur navigasi. Pemisahan dilakukan bertahap berdasarkan role, domain fitur, keamanan, dan kebutuhan lifecycle; tidak semua folder wajib dibuat sejak awal.
+
+### Struktur yang direkomendasikan
+
+```text
+public/
+├── index.html                 # Entry point/login atau redirect role
+├── shared/
+│   ├── styles.css             # Gaya global dan tema
+│   ├── app-shell.html         # Komponen shell bersama jika masih diperlukan
+│   ├── components/
+│   │   ├── modal.html
+│   │   ├── toast.html
+│   │   ├── topbar.html
+│   │   └── sidebar.html
+│   └── js/
+│       ├── api.js             # Helper request dan penanganan error
+│       ├── auth.js            # Session, login, logout, dan guard role
+│       ├── navigation.js      # Menu, breadcrumb, dan route view
+│       ├── notifications.js   # Notifikasi dan status sudah dibaca
+│       └── ui.js              # Modal, toast, escaping, dan helper tampilan
+├── siswa/
+│   ├── index.html             # Dashboard siswa
+│   ├── attendance.html        # Kamera, lokasi, dan presensi
+│   ├── attendance.js
+│   ├── attendance-report.html # Rekap presensi dan unduh laporan
+│   ├── reports.html           # Upload dan riwayat laporan PKL
+│   └── profile.html           # Profil dan pengaturan akun siswa
+├── guru/
+│   ├── index.html             # Dashboard guru
+│   ├── students.html          # Impor dan daftar siswa
+│   ├── locations.html         # Master lokasi dan usulan lokasi PPD
+│   ├── notifications.html
+│   └── profile.html
+├── admin/
+│   ├── index.html             # Dashboard admin
+│   ├── users.html             # Pembuatan dan pengelolaan akun
+│   ├── password-reset.html    # Reset password yang berwenang
+│   ├── attendance.html        # Rekap dan koreksi presensi
+│   ├── audit.html             # Audit log
+│   └── settings.html          # Retensi, sesi, dan konfigurasi
+└── tutorials/
+    ├── index.html             # Tutorial umum
+    └── help.html              # Bantuan dan kontak admin
+```
+
+### Aturan pemisahan
+
+- Fitur sensitif seperti akun, reset password, audit, dan koreksi presensi harus memiliki guard role di server; pemisahan HTML saja bukan pengganti RBAC.
+- Kamera dan geolokasi dapat dipisahkan ke `siswa/attendance.html` agar stream kamera hanya aktif pada halaman presensi dan selalu dihentikan saat keluar.
+- Fitur sederhana seperti tutorial, bantuan, detail lokasi, dan ubah password boleh tetap berupa modal selama lifecycle dan validasinya sudah jelas.
+- JavaScript dipisahkan berdasarkan domain sebelum HTML dipisahkan seluruhnya. Contoh: `attendance.js`, `students.js`, `reports.js`, `settings.js`.
+- Komponen yang dipakai lintas role ditempatkan di `shared/`; data dan aturan akses tetap ditentukan oleh endpoint server.
+- Setiap halaman baru harus mempertahankan session server-side, cookie HttpOnly, escaping data dinamis, persistence setelah refresh, dan pesan error yang terlihat.
+- V2 legacy tetap diperlakukan sebagai varian terpisah sampai ada keputusan migrasi; struktur baru ini terutama menjadi referensi untuk V1.
