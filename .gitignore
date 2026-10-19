@@ -8,8 +8,7 @@
 !.env.example
 
 # Runtime data
-/images/*
-!/images/.gitkeep
+
 
 /reports/*
 !/reports/.gitkeep
