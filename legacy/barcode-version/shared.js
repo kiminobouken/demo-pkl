@@ -23,7 +23,15 @@ navItems.forEach((item) =>
 );
 document
   .querySelector(".logout-button")
-  .addEventListener("click", () => (window.location.href = "login.html"));
+  .addEventListener("click", async () => {
+    try {
+      const response = await fetch("/api/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Logout ditolak server.");
+      window.location.href = "login.html";
+    } catch {
+      showToast("Logout gagal", "Sesi belum dapat diakhiri. Coba lagi.");
+    }
+  });
 
 function escapeHtml(text) {
   const div = document.createElement("div");

@@ -1,7 +1,7 @@
 <div class="app-shell" id="app-shell">
         <aside class="sidebar">
             <div class="brand-lockup">
-                <div class="brand-mark">SJ</div>
+                <img class="brand-mark" src="/assets/sasmita-jaya-crest.png" alt="Logo SMK Sasmita Jaya 2">
                 <div>
                     <strong>Sasmita Jaya</strong>
                     <span>Presensi PKL</span>
@@ -14,7 +14,7 @@
                     <strong id="current-user-name">Pengguna</strong>
                     <span id="current-user-role">Belum masuk</span>
                 </div>
-                <button class="icon-button" aria-label="Buka menu akun" title="Menu akun">•••</button>
+                <button class="icon-button" id="account-menu-button" type="button" aria-label="Buka menu akun" title="Menu akun" aria-haspopup="menu" aria-expanded="false" aria-controls="account-menu">•••</button>
             </div>
 
             <nav class="side-nav" aria-label="Navigasi utama">
@@ -24,16 +24,20 @@
                 <button class="nav-item" data-view="siswa"><span class="nav-icon">◎</span> Data siswa</button>
                 <button class="nav-item" data-view="laporan"><span class="nav-icon">↥</span> Laporan PKL</button>
                 <button class="nav-item teacher-only teacher-nav-item" data-teacher-only data-view="notifikasi"><span class="nav-icon">♢</span> Notifikasi <span class="nav-badge" id="notification-nav-count" hidden></span></button>
-                <button class="nav-item teacher-only teacher-nav-item" data-teacher-only data-view="profil-guru"><span class="nav-icon">◎</span> Profil guru</button>
+                <button class="nav-item teacher-only teacher-nav-item" data-teacher-only data-view="profil-guru"><span class="nav-icon">◎</span> <span id="profile-nav-label">Profil guru</span></button>
+                <p class="nav-label nav-label-spaced" data-roles="admin" hidden>Administrasi</p>
+                <button class="nav-item" data-roles="admin" data-view="akun" hidden><span class="nav-icon">▣</span> Kelola akun</button>
+                <button class="nav-item" data-roles="admin" data-view="kelas" hidden><span class="nav-icon">▦</span> Kelas &amp; guru</button>
+                <button class="nav-item" data-roles="admin" data-view="audit" hidden><span class="nav-icon">☰</span> Log audit</button>
                 <p class="nav-label nav-label-spaced">Lainnya</p>
                 <button class="nav-item" data-view="pengaturan"><span class="nav-icon">⚙</span> Pengaturan</button>
             </nav>
 
             <div class="sidebar-footer">
-                <div class="help-card">
+                <button class="help-card" id="open-help" type="button">
                     <span class="help-icon">?</span>
                     <div><strong>Butuh bantuan?</strong><span>Hubungi admin sekolah</span></div>
-                </div>
+                </button>
                 <button class="logout-button" id="logout-button"><span>↪</span> Keluar</button>
             </div>
         </aside>
@@ -46,7 +50,7 @@
                     <span class="live-dot">Sistem aktif</span>
                     <button class="notification-button teacher-only" data-teacher-only id="open-notifications" aria-label="Notifikasi"
                         title="Notifikasi"><span>♢</span><i id="notification-indicator" hidden></i></button>
-                    <div class="mini-avatar" id="current-user-mini-avatar">SJ</div>
+                    <button class="mini-avatar" id="current-user-mini-avatar" type="button" aria-label="Buka menu akun" title="Menu akun" aria-haspopup="menu" aria-expanded="false" aria-controls="account-menu">SJ</button>
                 </div>
             </header>
 
@@ -83,12 +87,12 @@
                     </div>
 
                     <div class="dashboard-grid">
-                        <article class="panel schedule-panel">
+                        <article class="panel schedule-panel" data-roles="siswa" hidden>
                             <div class="panel-heading">
                                 <div>
                                     <p class="eyebrow">Jadwal hari ini</p>
                                     <h2 id="today-schedule-date">Hari ini</h2>
-                                </div><button class="more-button" aria-label="Lihat jadwal lengkap">•••</button>
+                                </div>
                             </div>
                             <div class="timeline">
                                 <div class="timeline-item done"><span class="timeline-time">07:30</span><span
@@ -108,7 +112,7 @@
                                 </div>
                             </div>
                         </article>
-                        <article class="panel company-panel">
+                        <article class="panel company-panel" data-roles="siswa" hidden>
                             <div class="panel-heading">
                                 <div>
                                     <p class="eyebrow">Lokasi PKL</p>
@@ -126,6 +130,16 @@
                             <button class="secondary-button full-width" id="show-location">Lihat detail lokasi
                                 <span>↗</span></button>
                         </article>
+                    </div>
+
+                    <div class="panel today-panel" id="today-panel" data-roles="guru admin" hidden>
+                        <div class="panel-heading">
+                            <div>
+                                <p class="eyebrow">Monitoring hari ini</p>
+                                <h2>Foto presensi hari ini</h2>
+                            </div><button class="text-button" type="button" id="open-today-rekap">Buka rekap <span>→</span></button>
+                        </div>
+                        <div class="today-photo-grid" id="today-photo-grid" aria-live="polite"><p class="empty-state">Belum ada presensi hari ini.</p></div>
                     </div>
 
                     <div class="panel recent-panel">
@@ -158,15 +172,22 @@
                         <div>
                             <p class="eyebrow">Administrasi kehadiran</p>
                             <h1>Rekap presensi</h1>
-                            <p class="subheading">Pantau catatan kehadiran PKL kamu dalam satu tampilan.</p>
-                        </div><button class="secondary-button">↓ Unduh laporan</button>
+                            <p class="subheading" id="rekap-subheading">Pantau catatan kehadiran PKL kamu dalam satu tampilan.</p>
+                        </div>
+                        <div class="download-actions">
+                            <button class="secondary-button" id="download-attendance" type="button">↓ Unduh laporan</button>
+                            <p class="form-status" id="download-status" role="status"></p>
+                        </div>
                     </div>
                     <div class="filter-bar"><label>Periode<select id="period-filter">
                                 <option value="all">Semua periode</option>
+                                <option value="today">Hari ini</option>
                                 <option value="month">Bulan ini</option>
+                                <option value="quarter">3 bulan terakhir</option>
                             </select></label><label>Status<select id="status-filter">
                                 <option>Semua status</option>
                                 <option>Hadir</option>
+                                <option>Terlambat</option>
                                 <option>Tidak hadir</option>
                                 <option>Sakit</option>
                             </select></label>
@@ -175,16 +196,7 @@
                     <div class="panel full-panel">
                         <div class="table-wrap">
                             <table>
-                                <thead>
-                                    <tr>
-                                        <th>TANGGAL</th>
-                                        <th>JAM MASUK</th>
-                                        <th>JAM PULANG</th>
-                                        <th>STATUS</th>
-                                        <th>LOKASI</th>
-                                        <th>DETAIL FOTO</th>
-                                    </tr>
-                                </thead>
+                                <thead id="full-table-head"></thead>
                                 <tbody id="full-table"></tbody>
                             </table>
                         </div>
@@ -201,10 +213,10 @@
                         <div class="student-import-actions teacher-only" data-teacher-only>
                             <input id="student-csv" type="file" accept=".csv,text/csv" hidden>
                             <button class="secondary-button" id="choose-student-csv" type="button">↥ Impor CSV</button>
-                            <p id="student-import-status" role="status">Kolom wajib: Nama Siswa dan NISN.</p>
+                            <p id="student-import-status" role="status">Kolom wajib: Nama Siswa dan NISN. Opsional: No. HP Orang Tua, Kelas.</p>
                         </div>
                     </div>
-                    <div class="profile-grid">
+                    <div class="profile-grid" data-roles="siswa" hidden>
                         <article class="panel student-profile">
                             <div class="large-avatar" id="student-profile-avatar">SJ</div>
                             <p class="eyebrow">Peserta PKL</p>
@@ -247,7 +259,23 @@
                         </form>
                         <p class="form-status" id="pkl-location-form-status" role="status"></p>
                     </article>
-                    <article class="panel student-list-panel">
+                    <article class="panel location-request-panel" id="location-request-panel" data-roles="guru admin" hidden>
+                        <div class="panel-heading">
+                            <div>
+                                <p class="eyebrow">Persetujuan</p>
+                                <h2>Usulan tempat PKL dari siswa</h2>
+                            </div>
+                            <span class="status-pill neutral" id="location-request-count">0 menunggu</span>
+                        </div>
+                        <p class="form-status" id="location-request-status" role="status"></p>
+                        <div class="student-table-wrap">
+                            <table class="student-table">
+                                <thead><tr><th>SISWA</th><th>NAMA PT</th><th>ALAMAT</th><th></th></tr></thead>
+                                <tbody id="location-request-body"><tr><td colspan="4">Tidak ada usulan yang menunggu.</td></tr></tbody>
+                            </table>
+                        </div>
+                    </article>
+                    <article class="panel student-list-panel" data-roles="guru admin" hidden>
                         <div class="panel-heading">
                             <div>
                                 <p class="eyebrow">Master data</p>
@@ -258,10 +286,10 @@
                         <div class="student-table-wrap">
                             <table class="student-table">
                                 <thead>
-                                    <tr><th>NAMA SISWA</th><th>NISN</th><th>NO. HP ORANG TUA</th><th>TEMPAT PKL</th></tr>
+                                    <tr><th>NAMA SISWA</th><th>NISN</th><th>KELAS</th><th>NO. HP ORANG TUA</th><th>TEMPAT PKL</th></tr>
                                 </thead>
                                 <tbody id="students-table-body">
-                                    <tr><td colspan="4">Belum ada data siswa.</td></tr>
+                                    <tr><td colspan="5">Belum ada data siswa.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -305,8 +333,8 @@
                         <div class="panel-heading"><div><p class="eyebrow">Dokumen siswa</p><h2>Laporan yang masuk</h2></div><span class="status-pill neutral" id="teacher-report-count">0 laporan</span></div>
                         <div class="table-wrap">
                             <table>
-                                <thead><tr><th>NAMA FILE</th><th>WAKTU UPLOAD</th><th></th></tr></thead>
-                                <tbody id="teacher-report-table"><tr><td colspan="3" class="empty-state">Memuat laporan...</td></tr></tbody>
+                                <thead><tr><th>SISWA</th><th>NAMA FILE</th><th>WAKTU UPLOAD</th><th>STATUS</th><th></th></tr></thead>
+                                <tbody id="teacher-report-table"><tr><td colspan="5" class="empty-state">Memuat laporan...</td></tr></tbody>
                             </table>
                         </div>
                     </article>
@@ -327,17 +355,25 @@
                                 <button class="theme-option theme-garden" data-theme="garden" aria-label="Tema Taman" aria-pressed="true" title="Tema Taman"><i></i><span>Taman</span></button>
                                 <button class="theme-option theme-ocean" data-theme="ocean" aria-label="Tema Laut" aria-pressed="false" title="Tema Laut"><i></i><span>Laut</span></button>
                                 <button class="theme-option theme-terracotta" data-theme="terracotta" aria-label="Tema Terracotta" aria-pressed="false" title="Tema Terracotta"><i></i><span>Terracotta</span></button>
+                                <button class="theme-option theme-dark" data-theme="dark" aria-label="Tema Gelap" aria-pressed="false" title="Tema Gelap"><i></i><span>Gelap</span></button>
                             </div>
                         </div>
-                        <div class="setting-row">
+                        <div class="setting-row" data-roles="guru admin" hidden>
                             <div><strong>Aktivitas presensi siswa</strong><span>Tampilkan catatan presensi siswa di pusat notifikasi.</span></div><button class="toggle on notification-setting" data-notification-setting="attendance" type="button" role="switch" aria-checked="true" aria-label="Notifikasi presensi siswa"><i></i></button>
                         </div>
-                        <div class="setting-row">
+                        <div class="setting-row" data-roles="guru admin" hidden>
                             <div><strong>Laporan PKL baru</strong><span>Tampilkan laporan baru yang dikirim siswa di pusat notifikasi.</span></div><button class="toggle on notification-setting" data-notification-setting="reports" type="button" role="switch" aria-checked="true" aria-label="Notifikasi laporan PKL"><i></i></button>
                         </div>
                         <div class="setting-row">
-                            <div><strong>Bahasa aplikasi</strong><span>Bahasa Indonesia</span></div><button
-                                class="select-button">Indonesia⌄</button>
+                            <div><strong>Keamanan akun</strong><span>Ganti password akun kamu secara berkala.</span></div>
+                            <button class="secondary-button" id="open-change-password" type="button">Ubah password</button>
+                        </div>
+                        <div class="setting-row">
+                            <div><strong>Tutorial penggunaan</strong><span>Panduan langkah demi langkah untuk siswa, guru, dan admin.</span></div>
+                            <button class="secondary-button" id="open-tutorial" type="button">Buka tutorial</button>
+                        </div>
+                        <div class="setting-row">
+                            <div><strong>Bahasa aplikasi</strong><span>Bahasa Indonesia</span></div><span class="muted-label">Indonesia</span>
                         </div>
                     </div>
                 </section>
@@ -362,15 +398,15 @@
                 <section class="view teacher-only" id="profil-guru-view" data-teacher-only>
                     <div class="view-heading">
                         <div>
-                            <p class="eyebrow">Akun pembimbing</p>
-                            <h1>Profil guru</h1>
+                            <p class="eyebrow" id="profile-eyebrow">Akun pembimbing</p>
+                            <h1 id="profile-heading">Profil guru</h1>
                             <p class="subheading">Identitas tampilan dan ringkasan data yang dikelola.</p>
                         </div>
                     </div>
                     <div class="teacher-profile-layout">
                         <article class="panel teacher-profile-summary">
                             <div class="large-avatar" id="teacher-profile-avatar">GU</div>
-                            <p class="eyebrow">Guru pembimbing</p>
+                            <p class="eyebrow" id="profile-role-label">Guru pembimbing</p>
                             <h2 id="teacher-profile-display-name">Guru</h2>
                             <p class="subheading">SMK Sasmita Jaya</p>
                             <div class="teacher-profile-stats">
@@ -391,6 +427,112 @@
                             <button class="primary-button" type="submit">Simpan profil</button>
                         </form>
                     </div>
+                </section>
+
+                <section class="view" id="akun-view" data-roles="admin" hidden>
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Administrasi</p>
+                            <h1>Kelola akun</h1>
+                            <p class="subheading">Buat akun, atur ulang password sementara, atau nonaktifkan akun. Akun siswa hanya untuk NISN yang sudah ada di data siswa.</p>
+                        </div>
+                    </div>
+                    <article class="panel admin-form-panel">
+                        <form id="admin-user-form" class="admin-form">
+                            <label>ID login<input id="admin-user-id" maxlength="64" required autocomplete="off" placeholder="NISN siswa atau ID guru/admin"></label>
+                            <label>Role<select id="admin-user-role"><option value="siswa">Siswa</option><option value="guru">Guru</option><option value="admin">Admin</option></select></label>
+                            <label>Password sementara<input id="admin-user-password" type="text" minlength="12" required autocomplete="off" placeholder="Minimal 12 karakter"></label>
+                            <button class="secondary-button" type="button" id="admin-generate-password">Buat acak</button>
+                            <button class="primary-button" type="submit">Buat akun</button>
+                        </form>
+                        <p class="form-status" id="admin-user-status" role="status"></p>
+                    </article>
+                    <article class="panel admin-table-panel">
+                        <div class="panel-heading"><div><p class="eyebrow">Daftar akun</p><h2>Semua akun</h2></div><span class="status-pill neutral" id="admin-user-count">0 akun</span></div>
+                        <div class="student-table-wrap">
+                            <table class="student-table">
+                                <thead><tr><th>ID</th><th>NAMA</th><th>ROLE</th><th>STATUS</th><th></th></tr></thead>
+                                <tbody id="admin-user-table"><tr><td colspan="5">Memuat akun...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </article>
+                    <article class="panel admin-form-panel">
+                        <div class="panel-heading"><div><p class="eyebrow">Penugasan pembimbing</p><h2>Tugaskan siswa ke guru</h2></div></div>
+                        <p class="subheading">Guru selalu melihat siswa di kelas yang ia ampu (menu Kelas). Penugasan di sini menambahkan siswa tertentu secara langsung ke satu guru pembimbing.</p>
+                        <form id="teacher-assignment-form" class="admin-form">
+                            <label>Siswa<select id="assignment-student" required></select></label>
+                            <label>Guru pembimbing<select id="assignment-teacher"></select></label>
+                            <button class="primary-button" type="submit">Simpan penugasan</button>
+                        </form>
+                        <p class="form-status" id="assignment-status" role="status"></p>
+                    </article>
+                    <article class="panel admin-table-panel">
+                        <div class="panel-heading"><div><p class="eyebrow">Master guru</p><h2>Data guru</h2></div></div>
+                        <div class="student-table-wrap">
+                            <table class="student-table">
+                                <thead><tr><th>NAMA</th><th>NIP</th><th>NO. TELEPON</th><th>AKUN</th><th>SISWA DIAMPU</th></tr></thead>
+                                <tbody id="teacher-directory-table"><tr><td colspan="5">Memuat master guru...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="view" id="kelas-view" data-roles="admin" hidden>
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Administrasi</p>
+                            <h1>Kelas &amp; guru pembimbing</h1>
+                            <p class="subheading">Guru hanya memantau siswa pada kelas yang ditugaskan kepadanya. Atur kelas tiap siswa di halaman Data siswa.</p>
+                        </div>
+                    </div>
+                    <article class="panel admin-form-panel">
+                        <form id="admin-class-form" class="admin-form admin-form-short">
+                            <label>Nama kelas<input id="admin-class-name" maxlength="40" required autocomplete="off" placeholder="Contoh: XII RPL 1"></label>
+                            <button class="primary-button" type="submit">Tambah kelas</button>
+                        </form>
+                        <p class="form-status" id="admin-class-status" role="status"></p>
+                    </article>
+                    <article class="panel admin-table-panel">
+                        <div class="panel-heading"><div><p class="eyebrow">Penugasan</p><h2>Daftar kelas</h2></div><span class="status-pill neutral" id="admin-class-count">0 kelas</span></div>
+                        <div class="student-table-wrap">
+                            <table class="student-table">
+                                <thead><tr><th>KELAS</th><th>SISWA</th><th>GURU PEMBIMBING</th><th>TAMBAH GURU</th></tr></thead>
+                                <tbody id="admin-class-table"><tr><td colspan="4">Memuat kelas...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="view" id="audit-view" data-roles="admin" hidden>
+                    <div class="view-heading">
+                        <div>
+                            <p class="eyebrow">Administrasi</p>
+                            <h1>Log audit</h1>
+                            <p class="subheading">Catatan tindakan penting. Password dan isi dokumen tidak dicatat.</p>
+                        </div>
+                        <div class="notification-actions">
+                            <label class="audit-filter">Aksi<select id="audit-action-filter"><option value="">Semua aksi</option></select></label>
+                            <button class="secondary-button" id="refresh-audit" type="button" aria-label="Muat ulang log" title="Muat ulang">↻</button>
+                        </div>
+                    </div>
+                    <article class="panel admin-table-panel">
+                        <div class="panel-heading"><div><p class="eyebrow">Sedang login</p><h2>Sesi aktif</h2></div><span id="active-session-count" class="status-pill neutral">0 sesi</span></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th>PENGGUNA</th><th>ROLE</th><th>DIBUAT</th><th>KEDALUWARSA</th></tr></thead>
+                                <tbody id="active-session-table"><tr><td colspan="4">Memuat sesi...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </article>
+                    <article class="panel admin-table-panel">
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th>WAKTU</th><th>PELAKU</th><th>AKSI</th><th>TARGET</th><th>DETAIL</th><th>IP</th></tr></thead>
+                                <tbody id="audit-table"><tr><td colspan="6">Memuat log...</td></tr></tbody>
+                            </table>
+                        </div>
+                        <button class="secondary-button full-width" id="audit-more" type="button" hidden>Muat lebih banyak</button>
+                    </article>
                 </section>
             </div>
         </main>

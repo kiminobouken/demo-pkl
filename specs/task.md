@@ -62,37 +62,41 @@ Daftar task ini diturunkan dari requirements dan design. ID requirement yang dic
   Simpan profil secara persisten, ganti toggle demo dengan state nyata, dan pastikan tema tetap konsisten saat reload.  
   **Trace:** REQ-V1-006.
 
-- [ ] **TASK-022 — Menyelesaikan menu identitas dan profil kanan atas**
+- [x] **TASK-022 — Menyelesaikan menu identitas dan profil kanan atas**
   Hubungkan avatar kanan atas dan tombol titik tiga pada kartu identitas ke menu yang dapat dibuka dengan mouse, keyboard, dan mobile. Sediakan tautan ke profil, pengaturan, tutorial, bantuan, dan logout sesuai role; hilangkan kontrol dekoratif yang tidak berfungsi.
   **Trace:** REQ-V1-002, REQ-V1-006, REQ-V1-008; **Prioritas:** tinggi.
 
-- [ ] **TASK-023 — Menambahkan alur ubah password V1**
+- [x] **TASK-023 — Menambahkan alur ubah password V1**
   Buat UI ubah password pada login pertama dan Pengaturan, hubungkan ke `POST /api/password`, validasi minimal 12 karakter, tampilkan error/sukses, dan blokir penggunaan fitur sampai password sementara diganti.
   **Trace:** REQ-V1-001, REQ-V1-006; **Prioritas:** tinggi.
 
-- [ ] **TASK-024 — Menyempurnakan notifikasi dan pusat bantuan**
+- [x] **TASK-024 — Menyempurnakan notifikasi dan pusat bantuan**
   Pastikan tombol notifikasi kanan atas membuka pusat notifikasi untuk role yang berwenang, indikator unread konsisten, dan kartu “Butuh bantuan?” membuka kontak/instruksi bantuan yang nyata.
   **Trace:** REQ-V1-002, REQ-V1-006, REQ-V1-008.
 
-- [ ] **TASK-025 — Menambahkan tutorial penggunaan aplikasi**
+- [x] **TASK-025 — Menambahkan tutorial penggunaan aplikasi**
   Buat tutorial singkat yang dapat dibuka dari menu identitas/pengaturan dan menjelaskan login, lokasi PKL, kamera, presensi, laporan, dan navigasi untuk siswa, guru, serta admin.
   **Trace:** REQ-V1-006, REQ-V1-008.
 
-- [ ] **TASK-026 — Memperbaiki alur kamera dan tampilan kontrol presensi**
+- [x] **TASK-026 — Memperbaiki alur kamera dan tampilan kontrol presensi**
   Perjelas label dan status tombol “Buka kamera” serta “Ambil foto”, pertahankan state disabled sampai kamera aktif, pastikan foto hasil capture tidak mirror, dan tambahkan validasi browser/izin yang mudah dipahami.
   **Trace:** REQ-V1-005, REQ-V1-006, REQ-V1-008.
 
-- [ ] **TASK-027 — Menyelesaikan alur lokasi PPD dan detail lokasi kosong**
+- [x] **TASK-027 — Menyelesaikan alur lokasi PPD dan detail lokasi kosong**
   Tampilkan usulan lokasi PPD yang disetujui pada daftar pilihan tombol edit/atur lokasi, muat ulang data setelah perubahan, dan ganti toast lokasi hardcoded dengan dialog detail lokasi tersimpan atau pesan “data lokasi belum dimasukkan”.
   **Trace:** REQ-V1-002, REQ-V1-004, REQ-V1-008; **Prioritas:** tinggi.
 
-- [ ] **TASK-028 — Menambahkan filter tiga bulan dan unduh rekap presensi**
+- [x] **TASK-028 — Menambahkan filter tiga bulan dan unduh rekap presensi**
   Tambahkan opsi periode tiga bulan terakhir, terapkan filter pada tabel dan ringkasan, lalu buat tombol unduh yang menghasilkan laporan dari hasil filter aktif dengan kondisi kosong dan error yang jelas.
   **Trace:** REQ-V1-003, REQ-V1-008.
 
-- [ ] **TASK-029 — Memverifikasi persistence setelah refresh**
+- [x] **TASK-029 — Memverifikasi persistence setelah refresh**
   Pastikan upload laporan, foto presensi, metadata, lokasi, notifikasi baca, dan profil dimuat ulang dari server/database setelah refresh; tambahkan penanganan agar kegagalan penyimpanan tidak terlihat sebagai sukses.
   **Trace:** REQ-V1-006, REQ-V1-007, REQ-V1-008; **Prioritas:** tinggi.
+
+- [x] **TASK-030 — Menambahkan tag lokasi dan waktu pada foto presensi**
+  Tampilkan nama lokasi hasil reverse geocoding, koordinat GPS, dan waktu pengambilan sebagai overlay yang ikut tertanam pada foto. Jika lokasi atau nama tempat tidak tersedia, tampilkan koordinat atau pesan fallback tanpa menghalangi penyimpanan foto.
+  **Trace:** REQ-V1-005, REQ-V1-006, REQ-V1-008.
 
 ## 5. V2 Barcode, Guru, dan Admin
 
@@ -114,19 +118,19 @@ Daftar task ini diturunkan dari requirements dan design. ID requirement yang dic
 
 ## 6. Testing dan Operasional
 
-- [ ] **TASK-018 — Menambahkan test API dan persistence**  
+- [x] **TASK-018 — Menambahkan test API dan persistence**  
   Uji impor CSV, constraint database, upload, rollback file, attendance scan, merge koreksi, batas body, dan traversal path.  
   **Trace:** semua kontrak API.
 
-- [ ] **TASK-019 — Menambahkan test browser responsif**  
+- [x] **TASK-019 — Menambahkan test browser responsif**  
   Uji login, navigasi, kamera/lokasi dengan mock, filter rekap, upload, role visibility, tema, toast, dan layout mobile.  
   **Trace:** requirements V1/V2 dan non-fungsional.
 
-- [ ] **TASK-020 — Menambahkan observability dan backup**  
+- [x] **TASK-020 — Menambahkan observability dan backup**  
   Tambahkan logging terstruktur, health check, rotasi log, backup SQLite/JSONL, dan prosedur restore.  
   **Trace:** desain §8; **Prioritas:** sedang.
 
-- [ ] **TASK-021 — Menyusun dokumentasi pengguna dan deployment**  
+- [x] **TASK-021 — Menyusun dokumentasi pengguna dan deployment**  
   Dokumentasikan setup Node, HTTPS/localhost, izin browser, format CSV, role, alur presensi, dan troubleshooting.  
   **Trace:** kebutuhan non-fungsional dan cara jalan.
 
@@ -136,16 +140,18 @@ Daftar task ini diturunkan dari requirements dan design. ID requirement yang dic
 2. TASK-003 sampai TASK-005 untuk keamanan dan keputusan privasi.
 3. TASK-006 sampai TASK-010 untuk fondasi data dan presensi V1.
 4. TASK-011 sampai TASK-013 untuk laporan dan UX V1.
-5. TASK-022 sampai TASK-029 untuk menutup gap UX V1 yang tercatat di kertas.
+5. TASK-022 sampai TASK-030 untuk menutup gap UX V1 dan menambahkan tag lokasi pada foto presensi.
 6. TASK-014 sampai TASK-017 untuk penyempurnaan V2.
 7. TASK-018 sampai TASK-021 untuk verifikasi, observability, dan dokumentasi.
 
-TASK-005 dan TASK-006 sampai TASK-017 sudah dikonfirmasi pemilik proyek. TASK-022 sampai TASK-029 ditambahkan berdasarkan daftar fitur yang tercatat di kertas pada 18 Oktober 2026 dan menunggu implementasi serta verifikasi.
+TASK-005 dan TASK-006 sampai TASK-017 sudah dikonfirmasi pemilik proyek. TASK-022 sampai TASK-029 ditambahkan berdasarkan daftar fitur yang tercatat di kertas pada 18 Oktober 2026. TASK-030 menambahkan tag lokasi dan waktu pada foto presensi.
 
 ## 8. Analisis kebutuhan lanjutan akun
 
-- **Wajib sebelum produksi:** UI administrasi akun, reset password oleh admin, penonaktifan akun, dan validasi bahwa akun siswa memiliki NISN di master.
+- **Wajib sebelum produksi:** UI administrasi akun, reset password oleh admin, penonaktifan akun, validasi NISN pada master (akun siswa hanya untuk NISN yang ada di master), dan provisioning otomatis akun siswa dari master tanpa pembuatan manual.
 - **Wajib untuk RBAC yang benar:** tabel relasi guru-siswa atau guru-kelas/perusahaan; tanpa relasi ini pembatasan “siswa bimbingan” belum dapat diterapkan.
 - **Wajib untuk operasional:** audit viewer untuk admin, pencatatan sesi aktif, penguncian sementara setelah percobaan login berulang, dan prosedur pemulihan akun.
 - **Wajib untuk konsistensi V1/V2:** satu kebijakan password, logout, reset, role, dan format error pada kedua server.
 - **Tidak boleh dilakukan:** menyimpan password di README, source code, JSONL, audit log, browser storage, atau mengandalkan role dari request body.
+
+**Status cakupan hasil penggabungan yang dikonfirmasi:** administrasi akun, reset/nonaktifkan akun, audit dan sesi admin, validasi NISN master, provisioning otomatis akun siswa, penugasan guru-siswa, serta pengelompokan siswa per kelas dengan guru pengampu telah diimplementasikan pada V1. Guru melihat siswa yang ditugaskan langsung kepadanya atau yang berada di kelas yang ia ampu. V2 menerapkan password sementara, perubahan password per role, reset admin yang mencabut sesi, logout server-side, dan format respons akun yang sama; alur ini diuji pada skema V2 lama dan baru.

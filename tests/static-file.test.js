@@ -43,7 +43,9 @@ test("static file resolver ignores query strings and rejects encoded traversal",
     poll();
   });
 
-  assert.equal((await fetch(`http://localhost:${port}/?cache=1`)).status, 200);
+  const homePage = await fetch(`http://localhost:${port}/?cache=1`);
+  assert.equal(homePage.status, 200);
+  assert.match(await homePage.text(), /id="camera-tag"/);
   assert.equal((await fetch(`http://localhost:${port}/%2e%2e%2fserver.js`)).status, 400);
   assert.equal((await fetch(`http://localhost:${port}/%2e%2e%2f%2e%2e%2fetc/passwd`)).status, 400);
 });

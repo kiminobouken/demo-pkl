@@ -41,4 +41,31 @@ document.querySelector("#koreksi-table").addEventListener("change", async (event
     loadAttendance();
   }
 });
+
+document.querySelector("#admin-password-reset-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const status = document.querySelector("#admin-password-reset-status");
+  const button = form.querySelector("button[type=submit]");
+  button.disabled = true;
+  try {
+    const response = await fetch(`/api/users/${encodeURIComponent(document.querySelector("#reset-user-id").value.trim())}/password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: document.querySelector("#reset-user-password").value }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      status.textContent = result.message || "Password tidak dapat direset.";
+      return;
+    }
+    form.reset();
+    status.textContent = "Password direset. Pengguna wajib mengganti password saat login berikutnya.";
+  } catch {
+    status.textContent = "Tidak dapat menghubungi server. Coba lagi.";
+  } finally {
+    button.disabled = false;
+  }
+});
+
 loadAttendance();
