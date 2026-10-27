@@ -95,7 +95,15 @@ function showToast(title, detail, duration = 4200) {
 
 document
   .querySelector(".logout-button")
-  .addEventListener("click", () => (window.location.href = "login.html"));
+  .addEventListener("click", async () => {
+    try {
+      const response = await fetch("/api/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Logout ditolak server.");
+      window.location.href = "login.html";
+    } catch {
+      showToast("Logout gagal", "Sesi belum dapat diakhiri. Coba lagi.");
+    }
+  });
 
 /* ---------- Presensi: scan barcode kartu siswa ---------- */
 const modal = document.querySelector("#qr-modal");

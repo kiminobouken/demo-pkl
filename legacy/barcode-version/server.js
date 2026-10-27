@@ -27,6 +27,7 @@ authDatabase.exec(`
     id TEXT PRIMARY KEY,
     role TEXT NOT NULL CHECK (role IN ('siswa', 'guru', 'admin')),
     password_hash TEXT NOT NULL,
+    must_change_password INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS sessions (
@@ -44,6 +45,9 @@ authDatabase.exec(`
     created_at TEXT NOT NULL
   );
 `);
+if (!authDatabase.prepare("PRAGMA table_info(users)").all().some((column) => column.name === "must_change_password")) {
+  authDatabase.exec("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0");
+}
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -75,7 +79,7 @@ function passwordMatches(password, stored) {
 
 function seedUser(id, role, password) {
   if (!id || !password || password.length < 12 || authDatabase.prepare("SELECT id FROM users WHERE id = ?").get(id)) return;
-  authDatabase.prepare("INSERT INTO users (id, role, password_hash, created_at) VALUES (?, ?, ?, ?)")
+  authDatabase.prepare("INSERT INTO users (id, role, password_hash, must_change_password, created_at) VALUES (?, ?, ?, 1, ?)")
     .run(id, role, passwordHash(password), new Date().toISOString());
 }
 
@@ -109,7 +113,10 @@ function getSession(request) {
   const id = cookies(request)[sessionCookieName];
   if (!id) return null;
   return authDatabase.prepare(
-    "SELECT id, user_id AS userId, role FROM sessions WHERE id = ? AND expires_at > ?",
+    `SELECT sessions.id, sessions.user_id AS userId, users.role,
+      users.must_change_password AS mustChangePassword
+    FROM sessions JOIN users ON users.id = sessions.user_id
+    WHERE sessions.id = ? AND sessions.expires_at > ?`,
   ).get(id, new Date().toISOString()) || null;
 }
 
@@ -148,14 +155,20 @@ function appendJsonl(file, record) {
 function readBody(request, limit = 15_000_000) {
   return new Promise((resolve, reject) => {
     let body = "";
+    let tooLarge = false;
     request.on("data", (chunk) => {
+      if (tooLarge) return;
       body += chunk;
-      if (body.length > limit) {
-        reject(new Error("too large"));
-        request.destroy();
+      if (Buffer.byteLength(body) > limit) {
+        tooLarge = true;
+        const error = new Error("request body too large");
+        error.statusCode = 413;
+        reject(error);
       }
     });
-    request.on("end", () => resolve(body));
+    request.on("end", () => {
+      if (!tooLarge) resolve(body);
+    });
     request.on("error", reject);
   });
 }
@@ -198,12 +211,14 @@ function attendanceWithCorrections() {
         ...entry,
         status: correction
           ? correction.status
-          : entry.type === "pulang"
+          : entry.status || (entry.type === "pulang"
             ? "Pulang"
-            : "Hadir",
+            : "Hadir"),
         corrected: Boolean(correction),
         correctedBy: correction ? correction.correctedBy : null,
         correctedAt: correction ? correction.correctedAt : null,
+        previousStatus: correction ? correction.previousStatus : null,
+        correctionReason: correction ? correction.reason : null,
       };
     })
     .reverse();
@@ -320,8 +335,11 @@ async function handleScan(request, response) {
     };
     appendJsonl(attendanceLog, entry);
     sendJson(response, 201, { ok: true, type: entry.type, time, date });
-  } catch {
-    sendJson(response, 400, { ok: false, message: "Data presensi tidak valid" });
+  } catch (error) {
+    sendJson(response, error.statusCode || 400, {
+      ok: false,
+      message: error.statusCode === 413 ? "Ukuran permintaan terlalu besar." : "Data presensi tidak valid",
+    });
   }
 }
 
@@ -379,10 +397,12 @@ async function handleReportUpload(request, response) {
     };
     appendJsonl(reportLog, record);
     sendJson(response, 201, { ok: true, ...record });
-  } catch {
-    sendJson(response, 400, {
+  } catch (error) {
+    sendJson(response, error.statusCode || 400, {
       ok: false,
-      message: "Laporan tidak valid. Gunakan PDF/DOC/DOCX maksimal 10 MB.",
+      message: error.statusCode === 413
+        ? "Ukuran permintaan terlalu besar."
+        : "Laporan tidak valid. Gunakan PDF/DOC/DOCX maksimal 10 MB.",
     });
   }
 }
@@ -399,6 +419,12 @@ function serveFile(request, response) {
     return;
   }
   if (pathname === "/") pathname = "/login.html";
+  const session = getSession(request);
+  if (session?.mustChangePassword && pathname.endsWith(".html") && !["/account.html", "/login.html"].includes(pathname)) {
+    response.writeHead(302, { Location: "/account.html?required=1" });
+    response.end();
+    return;
+  }
   const filePath = path.normalize(path.join(root, pathname));
   const relative = path.relative(root, filePath);
   const blocked =
@@ -433,7 +459,7 @@ const server = http.createServer((request, response) => {
         const payload = JSON.parse(body);
         const id = String(payload.id || "").trim();
         const password = String(payload.password || "");
-        const user = authDatabase.prepare("SELECT id, role, password_hash FROM users WHERE id = ?").get(id);
+        const user = authDatabase.prepare("SELECT id, role, password_hash, must_change_password FROM users WHERE id = ?").get(id);
         if (!user || !passwordMatches(password, user.password_hash)) {
           sendJson(response, 401, { ok: false, message: "ID atau password tidak valid." });
           return;
@@ -441,7 +467,7 @@ const server = http.createServer((request, response) => {
         const sessionId = crypto.randomBytes(32).toString("hex");
         authDatabase.prepare("INSERT INTO sessions (id, user_id, role, expires_at) VALUES (?, ?, ?, ?)")
           .run(sessionId, user.id, user.role, new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString());
-        sendJson(response, 200, { ok: true, user: { id: user.id, role: user.role } }, {
+        sendJson(response, 200, { ok: true, user: { id: user.id, role: user.role, mustChangePassword: Boolean(user.must_change_password) } }, {
           "Set-Cookie": `${sessionCookieName}=${sessionId}; HttpOnly; SameSite=Lax; Path=/; Max-Age=28800`,
         });
       } catch {
@@ -458,7 +484,62 @@ const server = http.createServer((request, response) => {
   }
   if (request.method === "GET" && pathname === "/api/session") {
     if (!session) return sendJson(response, 401, { ok: false, message: "Sesi login diperlukan." });
-    return sendJson(response, 200, { ok: true, user: { id: session.userId, role: session.role } });
+    return sendJson(response, 200, { ok: true, user: { id: session.userId, role: session.role, mustChangePassword: Boolean(session.mustChangePassword) } });
+  }
+  if (request.method === "POST" && pathname === "/api/password") {
+    if (!session) return sendJson(response, 401, { ok: false, message: "Sesi login diperlukan." });
+    return readBody(request, 20_000).then((body) => {
+      try {
+        const payload = JSON.parse(body);
+        const password = String(payload.password || "");
+        if (password.length < 12) {
+          sendJson(response, 400, { ok: false, message: "Password minimal 12 karakter." });
+          return;
+        }
+        authDatabase.prepare("UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?")
+          .run(passwordHash(password), session.userId);
+        sendJson(response, 200, { ok: true });
+      } catch {
+        sendJson(response, 400, { ok: false, message: "Data password tidak valid." });
+      }
+    }).catch((error) => sendJson(response, error.statusCode || 400, {
+      ok: false,
+      message: error.statusCode === 413 ? "Ukuran permintaan terlalu besar." : "Data password tidak valid.",
+    }));
+  }
+  if (request.method === "POST" && /^\/api\/users\/[^/]+\/password$/.test(pathname)) {
+    if (!requireRole(session, ["admin"], response)) return;
+    return readBody(request, 20_000).then((body) => {
+      try {
+        const userId = decodeURIComponent(pathname.slice("/api/users/".length, -"/password".length));
+        const payload = JSON.parse(body);
+        const password = String(payload.password || "");
+        if (password.length < 12) {
+          sendJson(response, 400, { ok: false, message: "Password sementara minimal 12 karakter." });
+          return;
+        }
+        const user = authDatabase.prepare("SELECT id FROM users WHERE id = ?").get(userId);
+        if (!user) {
+          sendJson(response, 404, { ok: false, message: "Akun tidak ditemukan." });
+          return;
+        }
+        authDatabase.prepare("UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?")
+          .run(passwordHash(password), userId);
+        authDatabase.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
+        sendJson(response, 200, { ok: true });
+      } catch {
+        sendJson(response, 400, { ok: false, message: "Data reset password tidak valid." });
+      }
+    }).catch((error) => sendJson(response, error.statusCode || 400, {
+      ok: false,
+      message: error.statusCode === 413 ? "Ukuran permintaan terlalu besar." : "Data reset password tidak valid.",
+    }));
+  }
+  if (pathname.startsWith("/api/") && session?.mustChangePassword) {
+    return sendJson(response, 403, {
+      ok: false,
+      message: "Ganti password sementara sebelum menggunakan fitur lain.",
+    });
   }
   if (request.method === "POST" && pathname === "/api/attendance-scan")
     return requireRole(session, ["siswa"], response) && handleScan(request, response);

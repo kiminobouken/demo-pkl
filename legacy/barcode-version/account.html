@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f0e8">
+    <title>Keamanan akun | Presensi PKL SMK Sasmita Jaya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="auth-shell">
+        <main class="auth-form account-form">
+            <p class="eyebrow">Keamanan akun</p>
+            <h1 id="account-title">Ganti kata sandi</h1>
+            <p class="subheading" id="account-description">Gunakan kata sandi baru minimal 12 karakter.</p>
+            <form id="password-form">
+                <div class="field-group">
+                    <label for="new-password">Kata sandi baru</label>
+                    <input class="text-input" type="password" id="new-password" minlength="12"
+                        autocomplete="new-password" required>
+                </div>
+                <div class="field-group">
+                    <label for="confirm-password">Ulangi kata sandi baru</label>
+                    <input class="text-input" type="password" id="confirm-password" minlength="12"
+                        autocomplete="new-password" required>
+                </div>
+                <p id="password-status" role="status" aria-live="polite"></p>
+                <button class="primary-button full-width" type="submit">Simpan kata sandi</button>
+            </form>
+            <a class="auth-link" id="account-back" href="login.html">Kembali</a>
+        </main>
+    </div>
+    <script src="account.js"></script>
+</body>
+
+</html>

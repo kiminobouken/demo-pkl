@@ -20,12 +20,16 @@ Kemudian buka `http://localhost:3000` (otomatis menuju halaman masuk). Server me
 - Unggah soft copy laporan PKL oleh siswa (PDF/DOC/DOCX, maks. 10 MB) ke folder `reports`.
 - Halaman guru (`guru.html`): daftar roster SQLite, laporan masuk, dan catatan presensi.
 - Halaman admin (`admin.html`): koreksi status presensi dengan alasan opsional (data scan asli tetap tersimpan, koreksi dicatat terpisah).
+- Halaman keamanan akun (`account.html`): ganti password oleh semua role; akun awal dan hasil reset wajib mengganti password sebelum memakai fitur lain.
+- Admin dapat mereset password akun dari halaman koreksi; reset mencabut sesi akun target.
 - Rekap presensi dengan filter status hadir dan terlambat.
 - Profil siswa dan detail penempatan PKL.
 - Pengaturan notifikasi dengan toggle interaktif.
 - Layout responsif untuk desktop dan layar mobile.
 
 Data pada demo bersifat lokal dan simulasi. Login sekarang menggunakan session server-side, cookie HttpOnly, dan hashing `scrypt` di `auth.sqlite`. Buat akun awal dengan `ADMIN_PASSWORD`, `GURU_PASSWORD`, dan `SISWA_PASSWORD` (minimal 12 karakter) sebelum menjalankan server; password `demo1234` tidak lagi diterima. Daftar siswa bimbingan di halaman guru masih data contoh.
+
+Akun awal yang baru dibuat memakai password sementara dan wajib menggantinya saat login pertama. Semua role dapat mengganti password melalui tautan **Ganti kata sandi** pada halaman masing-masing. Admin dapat mereset password akun dari halaman koreksi; reset mencabut sesi akun target dan mewajibkan penggantian password saat login berikutnya. Migrasi schema mempertahankan akun lama tanpa memaksa reset.
 
 ## Gambaran yang Sudah Dikonfirmasi
 
@@ -50,7 +54,8 @@ Detail yang belum ditetapkan harus ditanyakan kembali kepada pemilik proyek. Jan
 
 ## Struktur Demo
 
-- `login.html`, `login.js` - halaman masuk dan pemilihan peran.
+- `login.html`, `login.js` - halaman masuk, pemilihan peran, dan pengalihan password sementara.
+- `account.html`, `account.js` - perubahan password dan pengalihan kembali sesuai role.
 - `index.html`, `app.js` - dashboard siswa (presensi barcode, rekap, laporan PKL).
 - `guru.html`, `guru.js` - halaman guru pembimbing.
 - `admin.html`, `admin.js` - halaman admin (koreksi presensi).

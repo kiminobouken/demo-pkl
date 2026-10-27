@@ -11,10 +11,12 @@
                 <label for="student-other-address">Alamat tempat PKL</label>
                 <input id="student-other-address" maxlength="500" placeholder="Masukkan alamat lengkap">
             </div>
+            <div class="student-location-requests" id="student-location-requests" hidden></div>
             <p class="form-status" id="student-location-status" role="status"></p>
             <button class="primary-button full-width" id="save-student-location" type="submit">Simpan lokasi PKL</button>
             <button class="secondary-button full-width" id="skip-student-location" type="button">Lewati dulu</button>
             <button class="secondary-button full-width" id="logout-from-location" type="button">Keluar</button>
+            <button class="secondary-button full-width" id="close-student-location" type="button" hidden>Tutup</button>
         </form>
     </dialog>
 
@@ -22,21 +24,117 @@
         <div class="modal"><button class="modal-close" id="close-qr" aria-label="Tutup">×</button>
             <p class="eyebrow">Presensi masuk</p>
             <h2 id="qr-title">Foto wajah untuk presensi</h2>
-            <p class="modal-copy">Ambil foto wajah sebagai bukti kehadiran di lokasi PKL.</p>
+            <p class="modal-copy">Ambil foto wajah dengan tag lokasi dan waktu sebagai bukti kehadiran di lokasi PKL.</p>
             <div class="qr-frame" id="camera-frame">
                 <video id="camera-preview" autoplay playsinline muted></video>
                 <canvas id="face-capture"></canvas>
+                <div class="camera-tag" id="camera-tag" aria-hidden="true">
+                    <strong id="camera-tag-location">Lokasi belum tersedia</strong>
+                    <span id="camera-tag-coordinates">Menunggu GPS...</span>
+                    <time id="camera-tag-time"></time>
+                </div>
                 <div class="face-guide" id="face-placeholder">◯</div><span id="camera-status">Kamera belum
                     diaktifkan</span>
             </div>
             <div class="modal-actions">
-                <button class="secondary-button" id="enable-camera"><span>◉</span> Buka kamera</button>
-                <button class="secondary-button" id="capture-face" disabled><span>◎</span> Ambil foto</button>
+                <button class="secondary-button" id="enable-camera" type="button"><span>◉</span> <b>Buka kamera</b></button>
+                <button class="secondary-button" id="capture-face" type="button" disabled><span>◎</span> <b>Ambil foto</b></button>
             </div>
+            <p class="camera-hint" id="camera-hint" role="status">Langkah 1: klik Buka kamera dan izinkan akses kamera.</p>
             <div class="scan-status" id="location-status"><i></i><span>Lokasi belum dibagikan</span></div>
-            <button class="primary-button full-width" id="save-attendance" disabled>Simpan presensi</button>
+            <button class="primary-button full-width" id="save-attendance" type="button" disabled>Simpan presensi</button>
         </div>
     </div>
-    <div class="toast" id="toast"><span>✓</span>
-        <div><strong>Presensi berhasil dicatat</strong><small>Jam masuk 07:28 · Lokasi terverifikasi</small></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"><span>✓</span>
+        <div><strong></strong><small></small></div>
     </div>
+
+    <div class="account-menu" id="account-menu" role="menu" aria-label="Menu akun" hidden>
+        <button type="button" role="menuitem" data-account-action="profile">Profil</button>
+        <button type="button" role="menuitem" data-account-action="settings">Pengaturan</button>
+        <button type="button" role="menuitem" data-account-action="tutorial">Tutorial</button>
+        <button type="button" role="menuitem" data-account-action="help">Bantuan</button>
+        <button type="button" role="menuitem" data-account-action="logout" class="danger">Keluar</button>
+    </div>
+
+    <dialog class="app-dialog" id="password-dialog" aria-labelledby="password-title">
+        <form id="password-form" novalidate>
+            <p class="eyebrow" id="password-eyebrow">Keamanan akun</p>
+            <h2 id="password-title">Ubah password</h2>
+            <p class="modal-copy" id="password-copy">Gunakan minimal 12 karakter yang sulit ditebak.</p>
+            <label for="password-new">Password baru
+                <input id="password-new" type="password" minlength="12" required autocomplete="new-password">
+            </label>
+            <label for="password-confirm">Ulangi password baru
+                <input id="password-confirm" type="password" minlength="12" required autocomplete="new-password">
+            </label>
+            <p class="form-status" id="password-status" role="alert"></p>
+            <button class="primary-button full-width" id="password-submit" type="submit">Simpan password</button>
+            <button class="secondary-button full-width" id="password-cancel" type="button">Batal</button>
+            <button class="secondary-button full-width" id="password-logout" type="button" hidden>Keluar</button>
+        </form>
+    </dialog>
+
+    <dialog class="app-dialog" id="help-dialog" aria-labelledby="help-title">
+        <div>
+            <p class="eyebrow">Pusat bantuan</p>
+            <h2 id="help-title">Butuh bantuan?</h2>
+            <div id="help-content" class="dialog-body"></div>
+            <button class="secondary-button full-width" type="button" data-close-dialog>Tutup</button>
+        </div>
+    </dialog>
+
+    <dialog class="app-dialog tutorial-dialog" id="tutorial-dialog" aria-labelledby="tutorial-title">
+        <div>
+            <p class="eyebrow">Panduan</p>
+            <h2 id="tutorial-title">Tutorial penggunaan</h2>
+            <div class="tutorial-tabs" role="tablist" aria-label="Pilih peran"></div>
+            <div class="dialog-body" id="tutorial-content" role="tabpanel"></div>
+            <button class="secondary-button full-width" type="button" data-close-dialog>Tutup</button>
+        </div>
+    </dialog>
+
+    <dialog class="app-dialog" id="location-detail-dialog" aria-labelledby="location-detail-title">
+        <div>
+            <p class="eyebrow">Lokasi PKL</p>
+            <h2 id="location-detail-title">Detail lokasi</h2>
+            <div class="dialog-body" id="location-detail-content"></div>
+            <button class="primary-button full-width" id="location-detail-edit" type="button" hidden>Atur lokasi PKL</button>
+            <button class="secondary-button full-width" type="button" data-close-dialog>Tutup</button>
+        </div>
+    </dialog>
+
+    <dialog class="app-dialog" id="review-dialog" aria-labelledby="review-title">
+        <form id="review-form">
+            <p class="eyebrow">Validasi laporan</p>
+            <h2 id="review-title">Periksa laporan</h2>
+            <p class="modal-copy" id="review-subject"></p>
+            <label for="review-status">Hasil pemeriksaan
+                <select id="review-status" required>
+                    <option value="valid">Valid</option>
+                    <option value="perlu_revisi">Perlu revisi</option>
+                </select>
+            </label>
+            <label for="review-note">Catatan untuk siswa (opsional)
+                <textarea id="review-note" maxlength="300" rows="3"></textarea>
+            </label>
+            <p class="form-status" id="review-error" role="alert"></p>
+            <button class="primary-button full-width" id="review-submit" type="submit">Simpan hasil</button>
+            <button class="secondary-button full-width" type="button" data-close-dialog>Batal</button>
+        </form>
+    </dialog>
+
+    <dialog class="app-dialog" id="temp-password-dialog" aria-labelledby="temp-password-title">
+        <form id="temp-password-form">
+            <p class="eyebrow">Administrasi akun</p>
+            <h2 id="temp-password-title">Atur ulang password</h2>
+            <p class="modal-copy" id="temp-password-subject"></p>
+            <label for="temp-password-input">Password sementara
+                <input id="temp-password-input" type="text" minlength="12" required autocomplete="off">
+            </label>
+            <button class="secondary-button full-width" type="button" id="temp-password-generate">Buat acak</button>
+            <p class="form-status" id="temp-password-status" role="alert"></p>
+            <button class="primary-button full-width" id="temp-password-submit" type="submit">Simpan password sementara</button>
+            <button class="secondary-button full-width" type="button" data-close-dialog>Batal</button>
+        </form>
+    </dialog>

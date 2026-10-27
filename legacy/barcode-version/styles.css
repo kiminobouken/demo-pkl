@@ -1233,6 +1233,24 @@ td span:not(.status-pill):not(.location-dot) {
   padding: 34px 30px;
   box-shadow: var(--shadow);
 }
+.account-form {
+  width: min(100%, 480px);
+  margin: auto;
+}
+.account-link {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.account-link:hover {
+  text-decoration: underline;
+}
+.admin-password-panel {
+  margin-top: 18px;
+  padding: 22px;
+}
 .auth-form h2 {
   font: 800 22px Manrope;
   margin: 0 0 6px;

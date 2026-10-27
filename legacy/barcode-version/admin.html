@@ -49,6 +49,7 @@
                 </div>
                 <div class="topbar-actions">
                     <span class="live-dot">Sistem aktif</span>
+                    <a class="account-link" href="account.html">Ganti kata sandi</a>
                     <div class="mini-avatar">AD</div>
                 </div>
             </header>
@@ -72,6 +73,27 @@
                             </table>
                         </div>
                     </div>
+                    <section class="panel admin-password-panel" aria-labelledby="admin-password-title">
+                        <div class="panel-heading">
+                            <div>
+                                <p class="eyebrow">Administrasi akun</p>
+                                <h2 id="admin-password-title">Reset kata sandi</h2>
+                            </div>
+                        </div>
+                        <form id="admin-password-reset-form">
+                            <div class="field-group">
+                                <label for="reset-user-id">ID akun</label>
+                                <input class="text-input" id="reset-user-id" autocomplete="off" required>
+                            </div>
+                            <div class="field-group">
+                                <label for="reset-user-password">Password sementara (minimal 12 karakter)</label>
+                                <input class="text-input" id="reset-user-password" type="password"
+                                    autocomplete="new-password" minlength="12" required>
+                            </div>
+                            <p id="admin-password-reset-status" role="status" aria-live="polite"></p>
+                            <button class="primary-button" type="submit">Reset password</button>
+                        </form>
+                    </section>
                 </section>
             </div>
         </main>

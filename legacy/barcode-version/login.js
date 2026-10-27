@@ -59,5 +59,9 @@ document.querySelector("#loginForm").addEventListener("submit", async (event) =>
     document.querySelector("#loginForm").append(message);
     return;
   }
+  if (result.user.mustChangePassword) {
+    window.location.href = "account.html?required=1";
+    return;
+  }
   window.location.href = roles[result.user.role].page;
 });

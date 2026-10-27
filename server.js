@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const { DatabaseSync } = require("node:sqlite");
+const { LoginAttemptLimiter } = require("./login-attempt-limiter");
 
 const root = __dirname;
 const publicDirectory = path.join(root, "public");
@@ -16,13 +17,16 @@ const databasePath = resolveRuntimePath(
   path.join("data", "presensi.sqlite"),
 );
 const sessionCookieName = "presensi_session";
-const loginAttempts = new Map();
+const loginAttempts = new LoginAttemptLimiter();
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".jpg": "image/jpeg",
   ".png": "image/png",
+  ".pdf": "application/pdf",
+  ".doc": "application/msword",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 };
 fs.mkdirSync(imageDirectory, { recursive: true });
 fs.mkdirSync(reportDirectory, { recursive: true });
@@ -103,6 +107,7 @@ database.exec(`
     role TEXT NOT NULL CHECK (role IN ('siswa', 'guru', 'admin')),
     password_hash TEXT NOT NULL,
     must_change_password INTEGER NOT NULL DEFAULT 1,
+    is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS sessions (
@@ -157,6 +162,66 @@ if (!database
   database.exec("ALTER TABLE attendance_records ADD COLUMN location_address TEXT");
 }
 
+database.exec(`
+  CREATE TABLE IF NOT EXISTS classes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS teacher_classes (
+    teacher_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+    PRIMARY KEY (teacher_id, class_id)
+  );
+  CREATE TABLE IF NOT EXISTS report_reviews (
+    filename TEXT PRIMARY KEY,
+    status TEXT NOT NULL CHECK (status IN ('valid', 'perlu_revisi')),
+    note TEXT NOT NULL DEFAULT '',
+    reviewer_id TEXT NOT NULL,
+    reviewed_at TEXT NOT NULL
+  );
+`);
+if (!database.prepare("PRAGMA table_info(students)").all().some((column) => column.name === "class_id")) {
+  database.exec("ALTER TABLE students ADD COLUMN class_id INTEGER REFERENCES classes(id)");
+}
+{
+  const userColumns = database.prepare("PRAGMA table_info(users)").all().map((column) => column.name);
+  if (!userColumns.includes("is_active")) {
+    database.exec("ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1");
+    // Database dari versi B memakai kolom "active": salin statusnya agar akun nonaktif tetap nonaktif.
+    if (userColumns.includes("active")) database.exec("UPDATE users SET is_active = active");
+  }
+}
+
+const shouldSeedTeacherAssignments = !database
+  .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'teacher_student_assignments'")
+  .get();
+database.exec(`
+  CREATE TABLE IF NOT EXISTS account_provisioning_migrations (
+    name TEXT PRIMARY KEY,
+    applied_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS teachers (
+    nip TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS teacher_student_assignments (
+    student_nisn TEXT PRIMARY KEY REFERENCES students(nisn) ON DELETE CASCADE,
+    teacher_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    assigned_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS teacher_student_assignments_teacher_id
+    ON teacher_student_assignments (teacher_id);
+  -- Siswa yang diampu guru = ditugaskan langsung (versi A) ATAU berada di kelas guru itu (versi B).
+  CREATE VIEW IF NOT EXISTS teacher_visible_students AS
+    SELECT teacher_id, student_nisn FROM teacher_student_assignments
+    UNION
+    SELECT teacher_classes.teacher_id, students.nisn
+    FROM teacher_classes JOIN students ON students.class_id = teacher_classes.class_id;
+`);
+
 function hashPassword(password) {
   const salt = crypto.randomBytes(16);
   const derivedKey = crypto.scryptSync(password, salt, 64);
@@ -198,6 +263,72 @@ function seedAdmin() {
   );
 }
 
+function getUserProfile(userId) {
+  return database.prepare(
+    "SELECT display_name AS displayName, contact FROM user_profiles WHERE user_id = ?",
+  ).get(userId) || { displayName: "", contact: "" };
+}
+
+function seedMissingStudentAccounts() {
+  const migrationName = "student-nisn-temporary-password-v1";
+  if (database.prepare("SELECT 1 FROM account_provisioning_migrations WHERE name = ?").get(migrationName)) return;
+  const students = database.prepare("SELECT nisn FROM students").all();
+  const insertStudentAccount = database.prepare(`
+    INSERT OR IGNORE INTO users (id, role, password_hash, must_change_password, created_at)
+    VALUES (?, 'siswa', ?, 1, ?)
+  `);
+  const existingAccount = database.prepare("SELECT role, must_change_password AS mustChangePassword FROM users WHERE id = ?");
+  const setTemporaryStudentPassword = database.prepare(`
+    UPDATE users SET password_hash = ? WHERE id = ? AND role = 'siswa' AND must_change_password = 1
+  `);
+  let created = 0;
+  let initialized = 0;
+  database.exec("BEGIN");
+  try {
+    for (const student of students) {
+      const storedAccount = existingAccount.get(student.nisn);
+      const passwordHash = hashPassword(student.nisn);
+      if (!storedAccount) {
+        created += insertStudentAccount.run(student.nisn, passwordHash, new Date().toISOString()).changes;
+      } else if (storedAccount.role === "siswa" && storedAccount.mustChangePassword) {
+        initialized += setTemporaryStudentPassword.run(passwordHash, student.nisn).changes;
+      }
+    }
+    database.prepare("INSERT INTO account_provisioning_migrations (name, applied_at) VALUES (?, ?)")
+      .run(migrationName, new Date().toISOString());
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+  if (created || initialized) {
+    console.log(`${created} akun siswa otomatis dibuat; ${initialized} password sementara siswa diinisialisasi dari NISN.`);
+  }
+}
+
+// Hanya untuk database lama tanpa tabel penugasan: bila ada tepat satu guru aktif,
+// siswa yang belum punya kelas ditugaskan kepadanya. Siswa yang sudah berkelas tidak disentuh.
+function seedInitialTeacherAssignments() {
+  if (!shouldSeedTeacherAssignments) return;
+  const teachers = database.prepare("SELECT id FROM users WHERE role = 'guru' AND is_active = 1").all();
+  if (teachers.length !== 1) return;
+  const now = new Date().toISOString();
+  const assignStudent = database.prepare(`
+    INSERT OR IGNORE INTO teacher_student_assignments (student_nisn, teacher_id, assigned_at)
+    VALUES (?, ?, ?)
+  `);
+  database.exec("BEGIN");
+  try {
+    for (const { nisn } of database.prepare("SELECT nisn FROM students WHERE class_id IS NULL ORDER BY nisn").all()) {
+      assignStudent.run(nisn, teachers[0].id, now);
+    }
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+}
+
 function parseCookies(request) {
   return Object.fromEntries(
     String(request.headers.cookie || "")
@@ -215,7 +346,7 @@ function getSession(request) {
     SELECT sessions.id, sessions.expires_at, users.id AS user_id, users.role,
       users.must_change_password AS mustChangePassword
     FROM sessions JOIN users ON users.id = sessions.user_id
-    WHERE sessions.id = ? AND sessions.expires_at > ?
+    WHERE sessions.id = ? AND sessions.expires_at > ? AND users.is_active = 1
   `).get(sessionId, new Date().toISOString());
   return session || null;
 }
@@ -252,6 +383,110 @@ function forbidden(response) {
 
 function hasRole(session, roles) {
   return session && roles.includes(session.role);
+}
+
+const logDirectory = path.join(dataDirectory, "logs");
+const logFile = path.join(logDirectory, "app.log");
+const maxLogBytes = Number(process.env.LOG_MAX_BYTES) || 5 * 1024 * 1024;
+const maxLogFiles = Math.max(Number(process.env.LOG_MAX_FILES) || 5, 1);
+fs.mkdirSync(logDirectory, { recursive: true });
+
+function rotateLogIfNeeded() {
+  if (!fs.existsSync(logFile) || fs.statSync(logFile).size < maxLogBytes) return;
+  fs.rmSync(`${logFile}.${maxLogFiles}`, { force: true });
+  for (let index = maxLogFiles - 1; index >= 1; index -= 1) {
+    if (fs.existsSync(`${logFile}.${index}`)) fs.renameSync(`${logFile}.${index}`, `${logFile}.${index + 1}`);
+  }
+  fs.renameSync(logFile, `${logFile}.1`);
+}
+
+function logEvent(level, event, fields = {}) {
+  const line = JSON.stringify({ time: new Date().toISOString(), level, event, ...fields });
+  (level === "error" ? console.error : console.log)(line);
+  try {
+    rotateLogIfNeeded();
+    fs.appendFileSync(logFile, `${line}\n`);
+  } catch {
+    // Logging must never break a request.
+  }
+}
+
+function withJsonBody(request, response, handler, limit = 20_000) {
+  let body = "";
+  let tooLarge = false;
+  request.on("data", (chunk) => {
+    body += chunk;
+    if (body.length > limit) {
+      tooLarge = true;
+      request.destroy();
+    }
+  });
+  request.on("end", () => {
+    if (tooLarge) return;
+    try {
+      let payload;
+      try {
+        payload = JSON.parse(body || "{}");
+      } catch {
+        throw new Error("Format permintaan tidak valid.");
+      }
+      handler(payload);
+    } catch (error) {
+      writeJson(response, error.status || 400, { ok: false, message: error.message });
+    }
+  });
+}
+
+const guruStudentScope = "students.nisn IN (SELECT student_nisn FROM teacher_visible_students WHERE teacher_id = ?)";
+
+function attendanceScope(session) {
+  if (session.role === "admin") return { clause: "1 = 1", params: [] };
+  if (session.role === "guru") {
+    return { clause: `user_id IN (SELECT nisn FROM students WHERE ${guruStudentScope})`, params: [session.user_id] };
+  }
+  return { clause: "user_id = ?", params: [session.user_id] };
+}
+
+function canAccessStudent(session, nisn) {
+  if (session.role === "admin") return true;
+  if (session.role === "siswa") return session.user_id === nisn;
+  if (session.role !== "guru") return false;
+  return Boolean(database.prepare(`SELECT 1 FROM students WHERE nisn = ? AND ${guruStudentScope}`).get(nisn, session.user_id));
+}
+
+function visibleNisns(session) {
+  if (session.role === "admin") return null;
+  if (session.role === "guru") {
+    return new Set(database.prepare(`SELECT nisn FROM students WHERE ${guruStudentScope}`).all(session.user_id).map((row) => row.nisn));
+  }
+  return new Set([session.user_id]);
+}
+
+function maskPhone(value) {
+  const phone = String(value || "");
+  if (!phone) return "";
+  if (phone.length <= 7) return "*".repeat(phone.length);
+  return `${phone.slice(0, 4)}${"*".repeat(phone.length - 7)}${phone.slice(-3)}`;
+}
+
+function readReportLog() {
+  const logPath = path.join(reportDirectory, "laporan-log.jsonl");
+  if (!fs.existsSync(logPath)) return [];
+  return fs.readFileSync(logPath, "utf8").split(/\r?\n/).filter(Boolean).flatMap((line) => {
+    try { return [JSON.parse(line)]; } catch { return []; }
+  });
+}
+
+function listReportsFor(session) {
+  const visible = visibleNisns(session);
+  const names = new Map(database.prepare("SELECT nisn, name FROM students").all().map((row) => [row.nisn, row.name]));
+  const reviews = new Map(database.prepare(
+    "SELECT filename, status, note, reviewer_id AS reviewerId, reviewed_at AS reviewedAt FROM report_reviews",
+  ).all().map((row) => [row.filename, row]));
+  return readReportLog()
+    .filter((report) => !visible || visible.has(report.userId))
+    .map((report) => ({ ...report, studentName: names.get(report.userId) || "", review: reviews.get(report.filename) || null }))
+    .reverse();
 }
 
 function cleanupExpiredData() {
@@ -459,10 +694,16 @@ function serveFile(request, response) {
     return;
   }
   const requestedPath = pathname === "/" ? "/index.html" : pathname;
-  const servesRuntimeFile =
-    requestedPath.startsWith("/images/") || requestedPath.startsWith("/reports/");
-  const baseDirectory = servesRuntimeFile ? root : publicDirectory;
-  const filePath = path.resolve(baseDirectory, `.${requestedPath}`);
+  const servesImage = requestedPath.startsWith("/images/");
+  const servesReport = requestedPath.startsWith("/reports/");
+  const servesRuntimeFile = servesImage || servesReport;
+  const baseDirectory = servesImage ? imageDirectory : servesReport ? reportDirectory : publicDirectory;
+  const relativeRequest = servesImage
+    ? requestedPath.slice("/images/".length)
+    : servesReport
+      ? requestedPath.slice("/reports/".length)
+      : requestedPath.slice(1);
+  const filePath = path.resolve(baseDirectory, relativeRequest);
   const relativePath = path.relative(baseDirectory, filePath);
   const blockedTraversal =
     relativePath.startsWith("..") ||
@@ -479,28 +720,29 @@ function serveFile(request, response) {
       unauthorized(response);
       return;
     }
-    if (session.role === "siswa") {
-      const filename = path.basename(filePath);
-      const ownsPhoto = Boolean(database.prepare(
-        "SELECT id FROM attendance_records WHERE filename = ? AND user_id = ?",
-      ).get(filename, session.user_id));
-      const reportLogPath = path.join(reportDirectory, "laporan-log.jsonl");
-      const ownsReport = fs.existsSync(reportLogPath) && fs.readFileSync(reportLogPath, "utf8")
-        .split("\n")
-        .filter(Boolean)
-        .some((line) => {
-          try {
-            const report = JSON.parse(line);
-            return report.filename === filename && report.userId === session.user_id;
-          } catch {
-            return false;
-          }
-        });
-      if ((requestedPath.startsWith("/images/") && !ownsPhoto) ||
-          (requestedPath.startsWith("/reports/") && !ownsReport)) {
-        forbidden(response);
-        return;
-      }
+    if (session.mustChangePassword) {
+      writeJson(response, 403, { ok: false, code: "must_change_password", message: "Ganti password sementara terlebih dahulu." });
+      return;
+    }
+    const filename = path.basename(filePath);
+    const extension = path.extname(filename).toLowerCase();
+    const allowedExtensions = servesImage ? [".jpg", ".jpeg", ".png"] : [".pdf", ".doc", ".docx"];
+    if (path.dirname(filePath) !== baseDirectory || !allowedExtensions.includes(extension)) {
+      response.writeHead(404);
+      response.end("Not found");
+      return;
+    }
+    const ownerId = servesImage
+      ? database.prepare("SELECT user_id FROM attendance_records WHERE filename = ?").get(filename)?.user_id
+      : readReportLog().find((report) => report.filename === filename)?.userId;
+    if (!ownerId) {
+      response.writeHead(404);
+      response.end("Not found");
+      return;
+    }
+    if (!canAccessStudent(session, ownerId)) {
+      forbidden(response);
+      return;
     }
   }
   if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
@@ -515,14 +757,43 @@ function serveFile(request, response) {
   }
   response.writeHead(200, {
     "Content-Type":
-      mimeTypes[path.extname(filePath)] || "application/octet-stream",
+      mimeTypes[path.extname(filePath).toLowerCase()] || "application/octet-stream",
+    ...(servesRuntimeFile ? { "X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store" } : {}),
   });
   fs.createReadStream(filePath).pipe(response);
 }
 
-const server = http.createServer((request, response) => {
+function handleRequest(request, response) {
   const url = new URL(request.url || "/", "http://localhost");
+  const startedAt = Date.now();
   const session = getSession(request);
+  if (request.method === "GET" && url.pathname === "/healthz") {
+    try {
+      database.prepare("SELECT 1").get();
+      writeJson(response, 200, { ok: true, status: "ok", uptimeSeconds: Math.round(process.uptime()) });
+    } catch {
+      writeJson(response, 503, { ok: false, status: "database_error" });
+    }
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/api/health") {
+    try {
+      database.prepare("SELECT 1").get();
+      writeJson(response, 200, { ok: true, status: "healthy" });
+    } catch {
+      writeJson(response, 503, { ok: false, status: "unavailable" });
+    }
+    return;
+  }
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/images/") || url.pathname.startsWith("/reports/")) {
+    response.on("finish", () => logEvent("info", "request", {
+      method: request.method,
+      path: url.pathname,
+      status: response.statusCode,
+      durationMs: Date.now() - startedAt,
+      user: session?.user_id || null,
+    }));
+  }
   if (request.method === "POST" && url.pathname === "/api/login") {
     let body = "";
     request.on("data", (chunk) => {
@@ -535,17 +806,22 @@ const server = http.createServer((request, response) => {
         const id = String(payload.id || "").trim();
         const password = String(payload.password || "");
         const now = Date.now();
-        const attempts = loginAttempts.get(id) || [];
-        const recentAttempts = attempts.filter((timestamp) => now - timestamp < 20 * 60 * 1000);
-        if (recentAttempts.length >= 5) throw new Error("Terlalu banyak percobaan login. Coba lagi dalam 20 menit.");
-        const user = database.prepare("SELECT id, role, password_hash, must_change_password FROM users WHERE id = ?").get(id);
-        if (!user || !verifyPassword(password, user.password_hash)) {
-          recentAttempts.push(now);
-          loginAttempts.set(id, recentAttempts);
+        const activeLockout = loginAttempts.getLockoutDuration(id, now);
+        if (activeLockout !== null) {
+          const minutes = Math.ceil(activeLockout / 60_000);
+          throw new Error(`Terlalu banyak percobaan login. Coba lagi dalam ${minutes} menit.`);
+        }
+        const user = database.prepare("SELECT id, role, password_hash, must_change_password, is_active FROM users WHERE id = ?").get(id);
+        if (!user || !user.is_active || !verifyPassword(password, user.password_hash)) {
           audit(request, "login_failed", id || "unknown");
+          const lockoutDuration = loginAttempts.recordFailure(id, now);
+          if (lockoutDuration !== null) {
+            const minutes = Math.ceil(lockoutDuration / 60_000);
+            throw new Error(`Terlalu banyak percobaan login. Coba lagi dalam ${minutes} menit.`);
+          }
           throw new Error("ID atau password tidak valid.");
         }
-        loginAttempts.delete(id);
+        loginAttempts.reset(id);
         const sessionId = crypto.randomBytes(32).toString("hex");
         const createdAt = new Date();
         database.prepare(
@@ -557,7 +833,14 @@ const server = http.createServer((request, response) => {
           createdAt.toISOString(),
         );
         audit(request, "login_success", user.id, null, null, user.id);
-        writeJson(response, 200, { ok: true, user: { id: user.id, role: user.role, mustChangePassword: Boolean(user.must_change_password) } }, {
+        const profile = getUserProfile(user.id);
+        writeJson(response, 200, { ok: true, user: {
+          id: user.id,
+          role: user.role,
+          mustChangePassword: Boolean(user.must_change_password),
+          displayName: profile.displayName,
+          contact: profile.contact,
+        } }, {
           "Set-Cookie": `${sessionCookieName}=${sessionId}; HttpOnly; SameSite=Lax; Path=/; Max-Age=28800`,
         });
       } catch (error) {
@@ -578,11 +861,39 @@ const server = http.createServer((request, response) => {
   }
   if (request.method === "GET" && url.pathname === "/api/session") {
     if (!session) return unauthorized(response);
-    writeJson(response, 200, { ok: true, user: { id: session.user_id, role: session.role, mustChangePassword: Boolean(session.mustChangePassword) } });
+    const profile = getUserProfile(session.user_id);
+    writeJson(response, 200, { ok: true, user: {
+      id: session.user_id,
+      role: session.role,
+      mustChangePassword: Boolean(session.mustChangePassword),
+      displayName: profile.displayName,
+      contact: profile.contact,
+    } });
     return;
   }
   if (url.pathname.startsWith("/api/") && !session) {
     unauthorized(response);
+    return;
+  }
+  if (url.pathname.startsWith("/api/") && session.mustChangePassword && url.pathname !== "/api/password") {
+    writeJson(response, 403, {
+      ok: false,
+      code: "must_change_password",
+      message: "Ganti password sementara terlebih dahulu.",
+    });
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/api/location-address") {
+    const latitude = Number(url.searchParams.get("lat"));
+    const longitude = Number(url.searchParams.get("lon"));
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+        !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+      writeJson(response, 400, { ok: false, message: "Koordinat lokasi tidak valid." });
+      return;
+    }
+    reverseGeocode(latitude, longitude).then((address) => {
+      writeJson(response, 200, { address });
+    });
     return;
   }
   if (request.method === "POST" && url.pathname === "/api/password") {
@@ -598,6 +909,7 @@ const server = http.createServer((request, response) => {
         if (password.length < 12) throw new Error("Password minimal 12 karakter.");
         database.prepare("UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?")
           .run(hashPassword(password), session.user_id);
+        database.prepare("DELETE FROM sessions WHERE user_id = ? AND id != ?").run(session.user_id, session.id);
         audit(request, "password_changed", session.user_id, null, null, session.user_id);
         writeJson(response, 200, { ok: true });
       } catch (error) {
@@ -606,31 +918,301 @@ const server = http.createServer((request, response) => {
     });
     return;
   }
+  if (request.method === "GET" && url.pathname === "/api/config") {
+    writeJson(response, 200, {
+      helpContact: {
+        name: String(process.env.HELP_CONTACT_NAME || "").trim(),
+        email: String(process.env.HELP_CONTACT_EMAIL || "").trim(),
+        phone: String(process.env.HELP_CONTACT_PHONE || "").trim(),
+        note: String(process.env.HELP_CONTACT_NOTE || "").trim(),
+      },
+    });
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/api/users") {
+    if (!hasRole(session, ["admin"])) return forbidden(response);
+    const users = database.prepare(`
+      SELECT users.id, users.role, users.is_active AS active, users.must_change_password AS mustChangePassword,
+        users.created_at AS createdAt,
+        COALESCE(NULLIF(user_profiles.display_name, ''), students.name, '') AS displayName
+      FROM users
+      LEFT JOIN user_profiles ON user_profiles.user_id = users.id
+      LEFT JOIN students ON students.nisn = users.id
+      ORDER BY users.role, users.id
+    `).all().map((user) => ({
+      ...user,
+      active: Boolean(user.active),
+      mustChangePassword: Boolean(user.mustChangePassword),
+    }));
+    writeJson(response, 200, users);
+    return;
+  }
   if (request.method === "POST" && url.pathname === "/api/users") {
     if (!hasRole(session, ["guru", "admin"])) return forbidden(response);
-    let body = "";
-    request.on("data", (chunk) => {
-      body += chunk;
-      if (body.length > 20_000) request.destroy();
-    });
-    request.on("end", () => {
-      try {
-        const payload = JSON.parse(body);
-        const id = String(payload.id || "").trim();
-        const role = String(payload.role || "").trim();
-        const password = String(payload.password || "");
-        if (!id || !["siswa", "guru", "admin"].includes(role) || (role === "admin" && session.role !== "admin") || password.length < 12) {
-          throw new Error("ID, role, dan password minimal 12 karakter tidak valid.");
-        }
-        if (database.prepare("SELECT id FROM users WHERE id = ?").get(id)) throw new Error("ID sudah terdaftar.");
-        database.prepare(
-          "INSERT INTO users (id, role, password_hash, must_change_password, created_at) VALUES (?, ?, ?, 1, ?)",
-        ).run(id, role, hashPassword(password), new Date().toISOString());
-        audit(request, "user_created", id, null, { role }, session.user_id);
-        writeJson(response, 201, { ok: true, user: { id, role } });
-      } catch (error) {
-        writeJson(response, 400, { ok: false, message: error.message });
+    withJsonBody(request, response, (payload) => {
+      const id = String(payload.id || "").trim();
+      const role = String(payload.role || "").trim();
+      const password = String(payload.password || "");
+      if (!/^[A-Za-z0-9._-]{3,64}$/.test(id)) {
+        throw new Error("ID hanya boleh huruf, angka, titik, garis bawah, atau tanda hubung (3-64 karakter).");
       }
+      if (!["siswa", "guru", "admin"].includes(role)) throw new Error("Role tidak valid.");
+      if (session.role === "guru" && role !== "siswa") {
+        const error = new Error("Guru hanya dapat membuat akun siswa.");
+        error.status = 403;
+        throw error;
+      }
+      if (password.length < 12) throw new Error("Password sementara minimal 12 karakter.");
+      if (role === "siswa") {
+        if (!database.prepare("SELECT nisn FROM students WHERE nisn = ?").get(id)) {
+          throw new Error("NISN belum terdaftar di master siswa.");
+        }
+        if (!canAccessStudent(session, id)) {
+          const error = new Error("Siswa ini bukan bagian dari kelas Anda.");
+          error.status = 403;
+          throw error;
+        }
+      }
+      if (database.prepare("SELECT id FROM users WHERE id = ?").get(id)) throw new Error("ID sudah terdaftar.");
+      database.prepare(
+        "INSERT INTO users (id, role, password_hash, must_change_password, created_at) VALUES (?, ?, ?, 1, ?)",
+      ).run(id, role, hashPassword(password), new Date().toISOString());
+      audit(request, "user_created", id, null, { role }, session.user_id);
+      writeJson(response, 201, { ok: true, user: { id, role } });
+    });
+    return;
+  }
+  const userAction = /^\/api\/users\/([^/]+)\/(reset-password|active)$/.exec(url.pathname);
+  if (request.method === "POST" && userAction) {
+    if (!hasRole(session, ["admin"])) return forbidden(response);
+    let targetId;
+    try {
+      targetId = decodeURIComponent(userAction[1]);
+    } catch {
+      return writeJson(response, 400, { ok: false, message: "ID akun tidak valid." });
+    }
+    withJsonBody(request, response, (payload) => {
+      const target = database.prepare("SELECT id, role, is_active AS active FROM users WHERE id = ?").get(targetId);
+      if (!target) {
+        const error = new Error("Akun tidak ditemukan.");
+        error.status = 404;
+        throw error;
+      }
+      if (userAction[2] === "reset-password") {
+        const password = String(payload.password || "");
+        if (password.length < 12) throw new Error("Password sementara minimal 12 karakter.");
+        database.prepare("UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?")
+          .run(hashPassword(password), target.id);
+        database.prepare("DELETE FROM sessions WHERE user_id = ?").run(target.id);
+        audit(request, "password_reset", target.id, null, null, session.user_id);
+        writeJson(response, 200, { ok: true });
+        return;
+      }
+      if (typeof payload.active !== "boolean") throw new Error("Status aktif tidak valid.");
+      const active = payload.active;
+      if (target.id === session.user_id && !active) throw new Error("Anda tidak dapat menonaktifkan akun sendiri.");
+      if (!active && target.role === "admin" && target.active) {
+        const otherAdmins = database.prepare(
+          "SELECT COUNT(*) AS count FROM users WHERE role = 'admin' AND is_active = 1 AND id != ?",
+        ).get(target.id).count;
+        if (!otherAdmins) throw new Error("Harus ada minimal satu admin aktif.");
+      }
+      database.prepare("UPDATE users SET is_active = ? WHERE id = ?").run(active ? 1 : 0, target.id);
+      if (!active) database.prepare("DELETE FROM sessions WHERE user_id = ?").run(target.id);
+      audit(request, active ? "user_activated" : "user_deactivated", target.id, { active: !active }, { active }, session.user_id);
+      writeJson(response, 200, { ok: true, active });
+    });
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/api/teachers") {
+    if (!hasRole(session, ["admin"])) return forbidden(response);
+    const teachers = database.prepare(`
+      SELECT teachers.nip, teachers.name, teachers.phone,
+        users.id AS accountId, users.is_active AS isActive,
+        COUNT(DISTINCT visible.student_nisn) AS assignedStudentCount
+      FROM teachers
+      LEFT JOIN users ON users.id = teachers.nip AND users.role = 'guru'
+      LEFT JOIN teacher_visible_students AS visible ON visible.teacher_id = users.id
+      GROUP BY teachers.nip
+      ORDER BY teachers.name
+    `).all().map((teacher) => ({
+      ...teacher,
+      isActive: teacher.accountId ? Boolean(teacher.isActive) : false,
+      assignedStudentCount: Number(teacher.assignedStudentCount),
+    }));
+    writeJson(response, 200, teachers);
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/api/teacher-assignments") {
+    if (!hasRole(session, ["admin"])) return forbidden(response);
+    const assignments = database.prepare(`
+      SELECT assignments.student_nisn AS studentNisn,
+        assignments.teacher_id AS teacherId, students.name AS studentName
+      FROM teacher_student_assignments AS assignments
+      JOIN students ON students.nisn = assignments.student_nisn
+      ORDER BY students.name
+    `).all();
+    writeJson(response, 200, assignments);
+    return;
+  }
+  if (request.method === "PUT" && url.pathname === "/api/teacher-assignments") {
+    if (!hasRole(session, ["admin"])) return forbidden(response);
+    withJsonBody(request, response, (payload) => {
+      const studentNisn = String(payload.studentNisn || "").trim();
+      const teacherId = String(payload.teacherId || "").trim();
+      if (!/^\d{10}$/.test(studentNisn) ||
+          !database.prepare("SELECT 1 FROM students WHERE nisn = ?").get(studentNisn)) {
+        throw new Error("NISN siswa tidak terdaftar di master.");
+      }
+      const before = database.prepare(
+        "SELECT teacher_id AS teacherId FROM teacher_student_assignments WHERE student_nisn = ?",
+      ).get(studentNisn) || null;
+      if (!teacherId) {
+        database.prepare("DELETE FROM teacher_student_assignments WHERE student_nisn = ?").run(studentNisn);
+      } else {
+        const teacher = database.prepare(
+          "SELECT id FROM users WHERE id = ? AND role = 'guru' AND is_active = 1",
+        ).get(teacherId);
+        if (!teacher) throw new Error("Pilih akun guru aktif.");
+        database.prepare(`
+          INSERT INTO teacher_student_assignments (student_nisn, teacher_id, assigned_at)
+          VALUES (?, ?, ?)
+          ON CONFLICT(student_nisn) DO UPDATE SET
+            teacher_id = excluded.teacher_id, assigned_at = excluded.assigned_at
+        `).run(studentNisn, teacherId, new Date().toISOString());
+      }
+      audit(request, "teacher_student_assignment_changed", studentNisn, before, { teacherId: teacherId || null }, session.user_id);
+      writeJson(response, 200, { ok: true, studentNisn, teacherId: teacherId || null });
+    });
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/api/sessions") {
+    if (!hasRole(session, ["admin"])) return forbidden(response);
+    const sessions = database.prepare(`
+      SELECT users.id AS userId, users.role, sessions.created_at AS createdAt,
+        sessions.expires_at AS expiresAt
+      FROM sessions JOIN users ON users.id = sessions.user_id
+      WHERE sessions.expires_at > ? AND users.is_active = 1
+      ORDER BY sessions.created_at DESC
+    `).all(new Date().toISOString());
+    writeJson(response, 200, sessions);
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/api/audit-logs") {
+    if (!hasRole(session, ["admin"])) return forbidden(response);
+    const limit = Math.min(Math.max(Number(url.searchParams.get("limit")) || 100, 1), 500);
+    const action = String(url.searchParams.get("action") || "").trim();
+    const before = Number(url.searchParams.get("before")) || null;
+    const clauses = [];
+    const params = [];
+    if (action) { clauses.push("action = ?"); params.push(action); }
+    if (before) { clauses.push("id < ?"); params.push(before); }
+    const logs = database.prepare(`
+      SELECT id, actor_id AS actorId, action, target, after_value AS detail, ip_address AS ip, created_at AS createdAt
+      FROM audit_logs ${clauses.length ? `WHERE ${clauses.join(" AND ")}` : ""}
+      ORDER BY id DESC LIMIT ?
+    `).all(...params, limit).map((row) => ({ ...row, detail: row.detail ? row.detail.slice(0, 300) : null }));
+    const actions = database.prepare("SELECT DISTINCT action FROM audit_logs ORDER BY action").all().map((row) => row.action);
+    writeJson(response, 200, { logs, actions });
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/api/classes") {
+    if (!hasRole(session, ["admin", "guru"])) return forbidden(response);
+    const rows = database.prepare(`
+      SELECT classes.id, classes.name,
+        (SELECT COUNT(*) FROM students WHERE students.class_id = classes.id) AS studentCount
+      FROM classes
+      ${session.role === "guru" ? "WHERE classes.id IN (SELECT class_id FROM teacher_classes WHERE teacher_id = ?)" : ""}
+      ORDER BY classes.name
+    `).all(...(session.role === "guru" ? [session.user_id] : []));
+    const teachers = database.prepare(`
+      SELECT teacher_classes.class_id AS classId, users.id,
+        COALESCE(NULLIF(user_profiles.display_name, ''), users.id) AS displayName
+      FROM teacher_classes
+      JOIN users ON users.id = teacher_classes.teacher_id
+      LEFT JOIN user_profiles ON user_profiles.user_id = users.id
+      ORDER BY displayName
+    `).all();
+    writeJson(response, 200, rows.map((item) => ({
+      ...item,
+      teachers: teachers.filter((teacher) => teacher.classId === item.id).map(({ id, displayName }) => ({ id, displayName })),
+    })));
+    return;
+  }
+  if (request.method === "POST" && url.pathname === "/api/classes") {
+    if (!hasRole(session, ["admin"])) return forbidden(response);
+    withJsonBody(request, response, (payload) => {
+      const name = String(payload.name || "").trim();
+      if (name.length < 1 || name.length > 40) throw new Error("Nama kelas 1-40 karakter.");
+      if (database.prepare("SELECT id FROM classes WHERE name = ? COLLATE NOCASE").get(name)) throw new Error("Nama kelas sudah ada.");
+      const result = database.prepare("INSERT INTO classes (name, created_at) VALUES (?, ?)").run(name, new Date().toISOString());
+      audit(request, "class_created", String(result.lastInsertRowid), null, { name }, session.user_id);
+      writeJson(response, 201, { ok: true, class: { id: Number(result.lastInsertRowid), name } });
+    });
+    return;
+  }
+  const classTeacher = /^\/api\/classes\/(\d+)\/teachers(?:\/([^/]+))?$/.exec(url.pathname);
+  if (classTeacher && (request.method === "POST" || request.method === "DELETE")) {
+    if (!hasRole(session, ["admin"])) return forbidden(response);
+    const classId = Number(classTeacher[1]);
+    if (!database.prepare("SELECT id FROM classes WHERE id = ?").get(classId)) {
+      return writeJson(response, 404, { ok: false, message: "Kelas tidak ditemukan." });
+    }
+    if (request.method === "DELETE") {
+      let teacherId;
+      try {
+        teacherId = decodeURIComponent(classTeacher[2] || "");
+      } catch {
+        return writeJson(response, 400, { ok: false, message: "ID guru tidak valid." });
+      }
+      const result = database.prepare("DELETE FROM teacher_classes WHERE class_id = ? AND teacher_id = ?").run(classId, teacherId);
+      if (!result.changes) return writeJson(response, 404, { ok: false, message: "Penugasan tidak ditemukan." });
+      audit(request, "class_teacher_removed", String(classId), { teacherId }, null, session.user_id);
+      return writeJson(response, 200, { ok: true });
+    }
+    withJsonBody(request, response, (payload) => {
+      const teacherId = String(payload.teacherId || "").trim();
+      const teacher = database.prepare("SELECT id FROM users WHERE id = ? AND role = 'guru' AND is_active = 1").get(teacherId);
+      if (!teacher) throw new Error("Pilih akun guru yang aktif.");
+      if (database.prepare("SELECT 1 FROM teacher_classes WHERE class_id = ? AND teacher_id = ?").get(classId, teacherId)) {
+        throw new Error("Guru sudah ditugaskan pada kelas ini.");
+      }
+      database.prepare("INSERT INTO teacher_classes (teacher_id, class_id) VALUES (?, ?)").run(teacherId, classId);
+      audit(request, "class_teacher_assigned", String(classId), null, { teacherId }, session.user_id);
+      writeJson(response, 201, { ok: true });
+    });
+    return;
+  }
+  const reviewMatch = /^\/api\/reports\/([A-Za-z0-9._-]+)\/review$/.exec(url.pathname);
+  if (request.method === "POST" && reviewMatch) {
+    if (!hasRole(session, ["guru"])) return forbidden(response);
+    withJsonBody(request, response, (payload) => {
+      const filename = reviewMatch[1];
+      const report = readReportLog().find((item) => item.filename === filename);
+      if (!report) {
+        const error = new Error("Laporan tidak ditemukan.");
+        error.status = 404;
+        throw error;
+      }
+      if (!canAccessStudent(session, report.userId)) {
+        const error = new Error("Laporan ini bukan dari siswa di kelas Anda.");
+        error.status = 403;
+        throw error;
+      }
+      const status = String(payload.status || "");
+      const note = String(payload.note || "").trim();
+      if (!["valid", "perlu_revisi"].includes(status)) throw new Error("Status validasi tidak valid.");
+      if (note.length > 300) throw new Error("Catatan maksimal 300 karakter.");
+      const reviewedAt = new Date().toISOString();
+      database.prepare(`
+        INSERT INTO report_reviews (filename, status, note, reviewer_id, reviewed_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(filename) DO UPDATE SET
+          status = excluded.status, note = excluded.note,
+          reviewer_id = excluded.reviewer_id, reviewed_at = excluded.reviewed_at
+      `).run(filename, status, note, session.user_id, reviewedAt);
+      audit(request, "report_reviewed", filename, null, { status, note }, session.user_id);
+      writeJson(response, 200, { ok: true, review: { status, note, reviewerId: session.user_id, reviewedAt } });
     });
     return;
   }
@@ -671,32 +1253,28 @@ const server = http.createServer((request, response) => {
   }
   if (request.method === "GET" && url.pathname === "/api/notifications") {
     if (!hasRole(session, ["guru", "admin"])) return forbidden(response);
-    const reportsPath = path.join(reportDirectory, "laporan-log.jsonl");
-    const reports = fs.existsSync(reportsPath)
-      ? fs.readFileSync(reportsPath, "utf8").split(/\r?\n/).filter(Boolean).flatMap((line) => {
-          try { return [JSON.parse(line)]; } catch { return []; }
-        })
-      : [];
+    const names = new Map(database.prepare("SELECT nisn, name FROM students").all().map((row) => [row.nisn, row.name]));
+    const scope = attendanceScope(session);
     const attendance = database.prepare(`
-      SELECT filename, user_id AS userId, status, received_at AS date
-      FROM attendance_records WHERE role = 'siswa' ORDER BY received_at DESC
-    `).all();
+      SELECT filename, user_id AS userId, status, attendance_type AS attendanceType, received_at AS date
+      FROM attendance_records WHERE role = 'siswa' AND ${scope.clause} ORDER BY received_at DESC
+    `).all(...scope.params);
     const notifications = [
       ...attendance.map((record) => ({
         id: `attendance:${record.filename}`,
         category: "Presensi siswa",
-        title: "Presensi siswa tercatat",
-        detail: `${record.userId} · ${record.status}`,
+        title: `Presensi ${record.attendanceType === "pulang" ? "pulang" : "masuk"} tercatat`,
+        detail: `${names.get(record.userId) || record.userId} · ${record.status}`,
         date: record.date,
         target: "rekap",
       })),
-      ...reports.map((report) => ({
+      ...listReportsFor(session).map((report) => ({
         id: `report:${report.filename}`,
         category: "Laporan PKL",
         title: "Laporan PKL baru diunggah",
-        detail: report.originalName || report.filename,
+        detail: `${report.studentName || report.userId} · ${report.originalName || report.filename}`,
         date: report.createdAt,
-        filename: report.filename,
+        target: "laporan",
       })),
     ].sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
     const readIds = database.prepare(
@@ -743,17 +1321,21 @@ const server = http.createServer((request, response) => {
       .prepare(
         `SELECT students.nisn, students.name,
           students.parent_phone AS parentPhone,
+          classes.id AS classId,
+          classes.name AS className,
           locations.id AS pklLocationId,
           locations.company_name AS pklCompanyName,
           locations.address AS pklAddress
          FROM students
+         LEFT JOIN classes ON classes.id = students.class_id
          LEFT JOIN pkl_locations AS locations
            ON locations.id = students.pkl_location_id
+         WHERE ${session.role === "admin" ? "1 = 1" : guruStudentScope}
          ORDER BY students.name`,
       )
-      .all();
-    response.writeHead(200, { "Content-Type": "application/json" });
-    response.end(JSON.stringify(students));
+      .all(...(session.role === "admin" ? [] : [session.user_id]))
+      .map(({ parentPhone, ...student }) => ({ ...student, parentPhoneMasked: maskPhone(parentPhone) }));
+    writeJson(response, 200, students);
     return;
   }
   if (request.method === "GET" && url.pathname === "/api/pkl-locations") {
@@ -802,81 +1384,171 @@ const server = http.createServer((request, response) => {
         response.writeHead(400, { "Content-Type": "application/json" });
         response.end(JSON.stringify({ ok: false, message: error.message }));
       }
-      if (request.method === "POST" && url.pathname === "/api/pkl-location-requests") {
-        if (!hasRole(session, ["siswa"])) return forbidden(response);
-        let body = "";
-        request.on("data", (chunk) => {
-          body += chunk;
-          if (body.length > 20_000) request.destroy();
-        });
-        request.on("end", () => {
-          try {
-            const payload = JSON.parse(body);
-            const companyName = String(payload.companyName || "").trim().slice(0, 120);
-            const address = String(payload.address || "").trim().slice(0, 500);
-            if (companyName.length < 2 || !address || address.length < 5) throw new Error("Nama PT dan alamat wajib diisi.");
-            database.prepare(`
-              INSERT INTO pkl_location_requests (student_nisn, company_name, address, created_at)
-              VALUES (?, ?, ?, ?)
-            `).run(session.user_id, companyName, address, new Date().toISOString());
-            audit(request, "location_requested", session.user_id, null, { companyName, address }, session.user_id);
-            writeJson(response, 202, { ok: true, message: "Usulan lokasi dikirim untuk persetujuan Guru/Admin." });
-          } catch (error) {
-            writeJson(response, 400, { ok: false, message: error.message });
-          }
-        });
-        return;
-      }
     });
     return;
   }
-  if (request.method === "GET" && url.pathname.startsWith("/api/students/")) {
-    const nisn = decodeURIComponent(url.pathname.slice("/api/students/".length));
-    if (session.role === "siswa" && session.user_id !== nisn) return forbidden(response);
+  if (request.method === "POST" && url.pathname === "/api/pkl-location-requests") {
+    if (!hasRole(session, ["siswa"])) return forbidden(response);
+    withJsonBody(request, response, (payload) => {
+      const companyName = String(payload.companyName || "").trim();
+      const address = String(payload.address || "").trim();
+      if (companyName.length < 2 || companyName.length > 120 || address.length < 5 || address.length > 500) {
+        throw new Error("Nama PT 2-120 karakter dan alamat 5-500 karakter wajib diisi.");
+      }
+      if (!database.prepare("SELECT nisn FROM students WHERE nisn = ?").get(session.user_id)) {
+        throw new Error("NISN belum terdaftar di master siswa.");
+      }
+      if (database.prepare("SELECT id FROM pkl_locations WHERE company_name = ? AND address = ?").get(companyName, address)) {
+        throw new Error("Tempat PKL tersebut sudah tersedia. Pilih dari daftar lokasi.");
+      }
+      if (database.prepare(
+        "SELECT id FROM pkl_location_requests WHERE student_nisn = ? AND company_name = ? AND address = ? AND status = 'pending'",
+      ).get(session.user_id, companyName, address)) {
+        throw new Error("Usulan yang sama masih menunggu persetujuan.");
+      }
+      const result = database.prepare(`
+        INSERT INTO pkl_location_requests (student_nisn, company_name, address, created_at)
+        VALUES (?, ?, ?, ?)
+      `).run(session.user_id, companyName, address, new Date().toISOString());
+      audit(request, "location_requested", session.user_id, null, { companyName, address }, session.user_id);
+      writeJson(response, 202, {
+        ok: true,
+        request: { id: Number(result.lastInsertRowid), companyName, address, status: "pending" },
+        message: "Usulan lokasi dikirim untuk persetujuan guru/admin.",
+      });
+    });
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/api/pkl-location-requests") {
+    const scope = session.role === "admin"
+      ? { clause: "1 = 1", params: [] }
+      : session.role === "guru"
+        ? { clause: `r.student_nisn IN (SELECT nisn FROM students WHERE ${guruStudentScope})`, params: [session.user_id] }
+        : { clause: "r.student_nisn = ?", params: [session.user_id] };
+    const requests = database.prepare(`
+      SELECT r.id, r.student_nisn AS studentNisn, students.name AS studentName,
+        r.company_name AS companyName, r.address, r.status, r.created_at AS createdAt
+      FROM pkl_location_requests AS r
+      JOIN students ON students.nisn = r.student_nisn
+      WHERE ${scope.clause}
+      ORDER BY r.created_at DESC
+    `).all(...scope.params);
+    writeJson(response, 200, requests);
+    return;
+  }
+  const requestDecision = /^\/api\/pkl-location-requests\/(\d+)\/(approve|reject)$/.exec(url.pathname);
+  if (request.method === "POST" && requestDecision) {
+    if (!hasRole(session, ["guru", "admin"])) return forbidden(response);
+    withJsonBody(request, response, () => {
+      const item = database.prepare("SELECT * FROM pkl_location_requests WHERE id = ?").get(Number(requestDecision[1]));
+      if (!item) {
+        const error = new Error("Usulan tidak ditemukan.");
+        error.status = 404;
+        throw error;
+      }
+      if (!canAccessStudent(session, item.student_nisn)) {
+        const error = new Error("Usulan ini bukan dari siswa di kelas Anda.");
+        error.status = 403;
+        throw error;
+      }
+      if (item.status !== "pending") {
+        const error = new Error("Usulan sudah diproses.");
+        error.status = 409;
+        throw error;
+      }
+      if (requestDecision[2] === "reject") {
+        database.prepare("UPDATE pkl_location_requests SET status = 'rejected' WHERE id = ?").run(item.id);
+        audit(request, "location_request_rejected", String(item.id), null, { companyName: item.company_name }, session.user_id);
+        writeJson(response, 200, { ok: true, status: "rejected" });
+        return;
+      }
+      let locationId;
+      database.exec("BEGIN");
+      try {
+        const existing = database.prepare("SELECT id FROM pkl_locations WHERE company_name = ? AND address = ?")
+          .get(item.company_name, item.address);
+        locationId = existing
+          ? existing.id
+          : Number(database.prepare(
+            "INSERT INTO pkl_locations (company_name, address, created_at) VALUES (?, ?, ?)",
+          ).run(item.company_name, item.address, new Date().toISOString()).lastInsertRowid);
+        database.prepare("UPDATE pkl_location_requests SET status = 'approved' WHERE id = ?").run(item.id);
+        database.exec("COMMIT");
+      } catch (error) {
+        database.exec("ROLLBACK");
+        throw error;
+      }
+      audit(request, "location_request_approved", String(item.id), null, { locationId, companyName: item.company_name }, session.user_id);
+      writeJson(response, 200, { ok: true, status: "approved", locationId });
+    });
+    return;
+  }
+  if (request.method === "GET" && url.pathname.startsWith("/api/students/") && !url.pathname.endsWith("/location") && !url.pathname.endsWith("/class") && url.pathname !== "/api/students/import") {
+    let nisn;
+    try {
+      nisn = decodeURIComponent(url.pathname.slice("/api/students/".length));
+    } catch {
+      return writeJson(response, 400, { ok: false, message: "NISN tidak valid." });
+    }
+    if (!canAccessStudent(session, nisn)) return forbidden(response);
     const student = database
       .prepare(`
         SELECT students.nisn, students.name,
+          classes.id AS classId,
+          classes.name AS className,
           locations.id AS pklLocationId,
           locations.company_name AS pklCompanyName,
-          locations.address AS pklAddress
+          locations.address AS pklAddress,
+          locations.latitude AS pklLatitude,
+          locations.longitude AS pklLongitude
         FROM students
+        LEFT JOIN classes ON classes.id = students.class_id
         LEFT JOIN pkl_locations AS locations
           ON locations.id = students.pkl_location_id
         WHERE students.nisn = ?
       `)
       .get(nisn);
-    response.writeHead(student ? 200 : 404, { "Content-Type": "application/json" });
-    response.end(JSON.stringify(student || { message: "NISN belum terdaftar." }));
+    writeJson(response, student ? 200 : 404, student || { message: "NISN belum terdaftar." });
+    return;
+  }
+  if (request.method === "PUT" && url.pathname.startsWith("/api/students/") && url.pathname.endsWith("/class")) {
+    if (!hasRole(session, ["admin"])) return forbidden(response);
+    let nisn;
+    try {
+      nisn = decodeURIComponent(url.pathname.slice("/api/students/".length, -"/class".length));
+    } catch {
+      return writeJson(response, 400, { ok: false, message: "NISN tidak valid." });
+    }
+    withJsonBody(request, response, (payload) => {
+      const classId = payload.classId === null || payload.classId === "" ? null : Number(payload.classId);
+      if (classId !== null && !database.prepare("SELECT id FROM classes WHERE id = ?").get(classId)) {
+        throw new Error("Kelas tidak ditemukan.");
+      }
+      const result = database.prepare("UPDATE students SET class_id = ? WHERE nisn = ?").run(classId, nisn);
+      if (!result.changes) throw new Error("NISN belum terdaftar.");
+      audit(request, "student_class_changed", nisn, null, { classId }, session.user_id);
+      writeJson(response, 200, { ok: true });
+    });
     return;
   }
   if (request.method === "PUT" && url.pathname.startsWith("/api/students/") && url.pathname.endsWith("/location")) {
-    if (!hasRole(session, ["guru", "admin"]) && session.user_id !== decodeURIComponent(url.pathname.slice("/api/students/".length, -"/location".length))) {
-      return forbidden(response);
+    let nisn;
+    try {
+      nisn = decodeURIComponent(url.pathname.slice("/api/students/".length, -"/location".length));
+    } catch {
+      return writeJson(response, 400, { ok: false, message: "NISN tidak valid." });
     }
-    let body = "";
-    request.on("data", (chunk) => {
-      body += chunk;
-      if (body.length > 20_000) request.destroy();
-    });
-    request.on("end", () => {
-      try {
-        const encodedNisn = url.pathname.slice("/api/students/".length, -"/location".length);
-        const nisn = decodeURIComponent(encodedNisn);
-        const payload = JSON.parse(body);
-        const locationId = Number(payload.locationId);
-        const locationExists = database.prepare("SELECT id FROM pkl_locations WHERE id = ?").get(locationId);
-        if (!locationExists) throw new Error("Pilih lokasi PKL yang tersedia.");
-        const result = database
-          .prepare("UPDATE students SET pkl_location_id = ? WHERE nisn = ?")
-          .run(locationId, nisn);
-        if (!result.changes) throw new Error("NISN belum terdaftar.");
-        audit(request, "student_location_changed", nisn, null, { locationId }, session.user_id);
-        response.writeHead(200, { "Content-Type": "application/json" });
-        response.end(JSON.stringify({ ok: true }));
-      } catch (error) {
-        response.writeHead(400, { "Content-Type": "application/json" });
-        response.end(JSON.stringify({ ok: false, message: error.message }));
-      }
+    if (!canAccessStudent(session, nisn)) return forbidden(response);
+    withJsonBody(request, response, (payload) => {
+      const locationId = Number(payload.locationId);
+      const locationExists = database.prepare("SELECT id FROM pkl_locations WHERE id = ?").get(locationId);
+      if (!locationExists) throw new Error("Pilih lokasi PKL yang tersedia.");
+      const result = database
+        .prepare("UPDATE students SET pkl_location_id = ? WHERE nisn = ?")
+        .run(locationId, nisn);
+      if (!result.changes) throw new Error("NISN belum terdaftar.");
+      audit(request, "student_location_changed", nisn, null, { locationId }, session.user_id);
+      writeJson(response, 200, { ok: true });
     });
     return;
   }
@@ -899,6 +1571,7 @@ const server = http.createServer((request, response) => {
           ["namasiswa", "nama"].includes(header),
         );
         const nisnIndex = headers.indexOf("nisn");
+        const classIndex = headers.indexOf("kelas");
         const phoneIndex = headers.findIndex((header) =>
           ["nohporangtua", "nohportangtua", "nomorhportangtua", "nohportu"].includes(header),
         );
@@ -925,30 +1598,101 @@ const server = http.createServer((request, response) => {
             throw new Error(`NISN ${nisn} tercantum lebih dari sekali di CSV.`);
           }
           seenNisn.add(nisn);
-          return { name, nisn, parentPhone };
+          const className = classIndex < 0 ? "" : (values[classIndex] || "").trim();
+          if (className.length > 40) throw new Error(`Nama kelas pada baris ${index + 2} maksimal 40 karakter.`);
+          return { name, nisn, parentPhone, className, row: index + 2 };
         });
 
+        const ownClasses = session.role === "guru"
+          ? database.prepare(
+            "SELECT classes.id, classes.name FROM classes JOIN teacher_classes ON teacher_classes.class_id = classes.id WHERE teacher_classes.teacher_id = ?",
+          ).all(session.user_id)
+          : [];
         const insertStudent = database.prepare(`
-          INSERT INTO students (nisn, name, parent_phone)
-          VALUES (?, ?, ?)
+          INSERT INTO students (nisn, name, parent_phone, class_id)
+          VALUES (?, ?, ?, ?)
           ON CONFLICT(nisn) DO UPDATE SET
             name = excluded.name,
-            parent_phone = excluded.parent_phone
+            parent_phone = CASE WHEN excluded.parent_phone <> '' THEN excluded.parent_phone ELSE students.parent_phone END,
+            class_id = COALESCE(excluded.class_id, students.class_id)
         `);
+        const assignImportedStudent = database.prepare(`
+          INSERT INTO teacher_student_assignments (student_nisn, teacher_id, assigned_at)
+          VALUES (?, ?, ?)
+          ON CONFLICT(student_nisn) DO NOTHING
+        `);
+        const insertStudentAccount = database.prepare(`
+          INSERT OR IGNORE INTO users (id, role, password_hash, must_change_password, created_at)
+          VALUES (?, 'siswa', ?, 1, ?)
+        `);
+        let accountsCreated = 0;
+        let studentsCreated = 0;
+        let studentsUpdated = 0;
         database.exec("BEGIN");
         try {
           for (const student of students) {
-            insertStudent.run(student.nisn, student.name, student.parentPhone);
+            let classId = null;
+            if (session.role === "guru") {
+              if (student.className) {
+                const match = ownClasses.find((item) => item.name.toLowerCase() === student.className.toLowerCase());
+                if (!match) throw new Error(`Kelas "${student.className}" pada baris ${student.row} bukan kelas yang Anda ampu.`);
+                classId = match.id;
+              } else if (ownClasses.length === 1) {
+                classId = ownClasses[0].id;
+              } else if (ownClasses.length > 1) {
+                throw new Error(`Kolom Kelas wajib diisi pada baris ${student.row} karena Anda memegang ${ownClasses.length} kelas.`);
+              }
+              // Guru tanpa kelas tetap dapat mengimpor: siswanya ditugaskan langsung kepadanya (lihat di bawah).
+              const existing = database.prepare("SELECT class_id FROM students WHERE nisn = ?").get(student.nisn);
+              const existingAssignment = database.prepare(
+                "SELECT teacher_id FROM teacher_student_assignments WHERE student_nisn = ?",
+              ).get(student.nisn);
+              const inOwnClass = existing && existing.class_id !== null && ownClasses.some((item) => item.id === existing.class_id);
+              const assignedToMe = existingAssignment && existingAssignment.teacher_id === session.user_id;
+              const heldByOthers = existing && (existing.class_id !== null || existingAssignment);
+              if (heldByOthers && !inOwnClass && !assignedToMe) {
+                throw new Error(`NISN ${student.nisn} pada baris ${student.row} sudah terdaftar pada pembimbing atau kelas lain.`);
+              }
+            } else if (student.className) {
+              const existingClass = database.prepare("SELECT id FROM classes WHERE name = ? COLLATE NOCASE").get(student.className);
+              classId = existingClass
+                ? existingClass.id
+                : Number(database.prepare("INSERT INTO classes (name, created_at) VALUES (?, ?)")
+                  .run(student.className, new Date().toISOString()).lastInsertRowid);
+            }
+            const alreadyExists = Boolean(database.prepare("SELECT 1 FROM students WHERE nisn = ?").get(student.nisn));
+            insertStudent.run(student.nisn, student.name, student.parentPhone, classId);
+            if (alreadyExists) studentsUpdated += 1; else studentsCreated += 1;
+            if (!database.prepare("SELECT 1 FROM users WHERE id = ?").get(student.nisn)) {
+              accountsCreated += insertStudentAccount.run(
+                student.nisn,
+                hashPassword(student.nisn),
+                new Date().toISOString(),
+              ).changes;
+            }
+            if (session.role === "guru" && !ownClasses.length) {
+              assignImportedStudent.run(student.nisn, session.user_id, new Date().toISOString());
+            }
           }
           database.exec("COMMIT");
         } catch (error) {
           database.exec("ROLLBACK");
           throw error;
         }
+        audit(request, "students_imported", String(students.length), null, { count: students.length }, session.user_id);
 
-        const total = database.prepare("SELECT COUNT(*) AS count FROM students").get().count;
+        const total = session.role === "admin"
+          ? database.prepare("SELECT COUNT(*) AS count FROM students").get().count
+          : database.prepare(`SELECT COUNT(*) AS count FROM students WHERE ${guruStudentScope}`).get(session.user_id).count;
         response.writeHead(200, { "Content-Type": "application/json" });
-        response.end(JSON.stringify({ ok: true, imported: students.length, total }));
+        response.end(JSON.stringify({
+          ok: true,
+          imported: students.length,
+          created: studentsCreated,
+          updated: studentsUpdated,
+          accountsCreated,
+          total,
+          }));
       } catch (error) {
         response.writeHead(400, { "Content-Type": "application/json" });
         response.end(JSON.stringify({ ok: false, message: error.message }));
@@ -957,14 +1701,22 @@ const server = http.createServer((request, response) => {
     return;
   }
   if (request.method === "GET" && url.pathname === "/api/attendance-records") {
+    const scope = attendanceScope(session);
     const records = database
-      .prepare(session.role === "siswa"
-        ? "SELECT * FROM attendance_records WHERE user_id = ? ORDER BY captured_at DESC"
-        : "SELECT * FROM attendance_records ORDER BY captured_at DESC")
-      .all(...(session.role === "siswa" ? [session.user_id] : []))
+      .prepare(`
+        SELECT attendance_records.*, students.name AS student_name, classes.name AS class_name
+        FROM attendance_records
+        LEFT JOIN students ON students.nisn = attendance_records.user_id
+        LEFT JOIN classes ON classes.id = students.class_id
+        WHERE ${scope.clause.replace(/^user_id/, "attendance_records.user_id")}
+        ORDER BY captured_at DESC
+      `)
+      .all(...scope.params)
       .map((record) => ({
         filename: record.filename,
         userId: record.user_id,
+        studentName: record.student_name || "",
+        className: record.class_name || "",
         role: record.role,
         status: record.status,
         attendanceType: record.attendance_type,
@@ -993,6 +1745,7 @@ const server = http.createServer((request, response) => {
     return;
   }
   if (request.method === "POST" && url.pathname === "/api/attendance-photo") {
+    if (!hasRole(session, ["siswa"])) return forbidden(response);
     let body = "";
     request.on("data", (chunk) => {
       body += chunk;
@@ -1139,6 +1892,7 @@ const server = http.createServer((request, response) => {
     return;
   }
   if (request.method === "POST" && url.pathname === "/api/report-upload") {
+    if (!hasRole(session, ["siswa"])) return forbidden(response);
     let body = "";
     request.on("data", (chunk) => {
       body += chunk;
@@ -1170,7 +1924,7 @@ const server = http.createServer((request, response) => {
         }
         audit(request, "report_uploaded", filename, null, report, session.user_id);
         response.writeHead(201, { "Content-Type": "application/json" });
-        response.end(JSON.stringify({ ok: true, filename }));
+        response.end(JSON.stringify({ ok: true, filename, originalName: safeName }));
       } catch {
         response.writeHead(400, { "Content-Type": "application/json" });
         response.end(JSON.stringify({ ok: false, message: "File laporan tidak valid" }));
@@ -1179,45 +1933,35 @@ const server = http.createServer((request, response) => {
     return;
   }
   if (request.method === "GET" && url.pathname === "/api/reports") {
-    if (session.role === "siswa") {
-      const logPath = path.join(reportDirectory, "laporan-log.jsonl");
-      const ownReports = fs.existsSync(logPath)
-        ? fs.readFileSync(logPath, "utf8").split(/\r?\n/).filter(Boolean).flatMap((line) => {
-            try {
-              const report = JSON.parse(line);
-              return report.userId === session.user_id ? [report] : [];
-            } catch {
-              return [];
-            }
-          }).reverse()
-        : [];
-      audit(request, "reports_accessed", session.user_id, null, null, session.user_id);
-      return writeJson(response, 200, ownReports);
-    }
-    audit(request, "reports_accessed", "all", null, null, session.user_id);
-    const logPath = path.join(reportDirectory, "laporan-log.jsonl");
-    const reports = fs.existsSync(logPath)
-      ? fs.readFileSync(logPath, "utf8").split(/\r?\n/).filter(Boolean).flatMap((line) => {
-          try {
-            return [JSON.parse(line)];
-          } catch {
-            return [];
-          }
-        }).reverse()
-      : [];
-    response.writeHead(200, { "Content-Type": "application/json" });
-    response.end(JSON.stringify(reports));
+    audit(request, "reports_accessed", session.role === "siswa" ? session.user_id : "scoped", null, null, session.user_id);
+    writeJson(response, 200, listReportsFor(session));
     return;
   }
   serveFile(request, response);
+}
+
+const server = http.createServer((request, response) => {
+  try {
+    handleRequest(request, response);
+  } catch (error) {
+    logEvent("error", "unhandled_request_error", { message: error.message });
+    if (!response.headersSent) {
+      writeJson(response, 500, { ok: false, message: "Terjadi kesalahan pada server." });
+    } else {
+      response.end();
+    }
+  }
 });
 
 const port = Number(process.env.PORT) || 3000;
 seedAdmin();
 seedConfiguredUser(process.env.GURU_ID || "guru.pembimbing", "guru", process.env.GURU_PASSWORD);
 cleanupExpiredData();
+seedMissingStudentAccounts();
+seedInitialTeacherAssignments();
 server.listen(port, () => {
  console.log(`Presensi PKL berjalan di http://localhost:${port}`);
+ logEvent("info", "server_started", { port });
  backfillLocationAddresses().catch((error) => {
    console.error("Pengisian alamat lokasi lama gagal:", error.message);
  });
